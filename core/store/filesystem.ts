@@ -2,13 +2,13 @@ import * as FileSystem from 'expo-file-system'
 import JSYaml from 'js-yaml'
 import { StorageProvider } from './abstract'
 
-interface FileSystemStorageProviderOptions<T> {
+interface FileSystemStorageProviderOptions {
   type?: 'document' | 'cache'
   filePath: string
 }
 
 export const createFileSystemStorageProvider = <T>(
-  opt: FileSystemStorageProviderOptions<T>
+  opt: FileSystemStorageProviderOptions
 ): StorageProvider<T> => {
   const type = opt.type || 'cache'
   const base =

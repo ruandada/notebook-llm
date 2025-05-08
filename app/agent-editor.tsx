@@ -10,7 +10,7 @@ const CancelButton: React.FC = memo(() => {
 
   return (
     <Pressable onPress={() => router.back()}>
-      <Text className="text-lg text-danger">{t('cancel')}</Text>
+      <Text className="text-lg text-destructive">{t('cancel')}</Text>
     </Pressable>
   )
 })

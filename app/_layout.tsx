@@ -4,10 +4,10 @@ import { useEffect } from 'react'
 import 'react-native-reanimated'
 
 import '@/core/i18n'
-import '@/assets/theme.css'
+import '@/assets/global.css'
 import { useTranslation } from 'react-i18next'
 import { useAppInit } from '@/hooks/use-app-init'
-import { Alert, BackHandler, Text, View } from 'react-native'
+import { Alert, BackHandler } from 'react-native'
 import { ThemeProvider } from '@/components/theme-provider'
 
 export {

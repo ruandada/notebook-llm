@@ -63,7 +63,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = memo(
         colors: {
           primary: theme.colors.tint[scheme],
           background: theme.colors.background[scheme],
-          card: theme.colors.tertiaryBackground[scheme],
+          card: theme.colors.background[scheme],
           text: theme.colors.label[scheme],
           border: theme.colors.border[scheme],
           notification: theme.colors.tint[scheme],

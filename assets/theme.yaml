@@ -39,9 +39,11 @@ colors:
     ios: separator
 
   tint:
-    light: '#007AFF'
-    dark: '#0A84FF'
-    ios: systemBlue
+    light: '#18181b'
+    dark: '#FAFAFA'
+    # light: '#007AFF'
+    # dark: '#0A84FF'
+    # ios: systemBlue
 
   link:
     light: '#007AFF'
@@ -53,7 +55,7 @@ colors:
     dark: '#EBEBF54D'
     ios: placeholderText
 
-  danger:
+  destructive:
     light: '#FF3B30'
     dark: '#FF453A'
     ios: systemRed

@@ -22,4 +22,6 @@ const createConfig = () => {
   return config
 }
 
-module.exports = withNativeWind(createConfig(), { input: './assets/theme.css' })
+module.exports = withNativeWind(createConfig(), {
+  input: './assets/global.css',
+})

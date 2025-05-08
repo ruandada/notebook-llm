@@ -1,6 +1,10 @@
 import { Injectable } from '@/core/di'
-import { createFileSystemStorageProvider } from '@/core/store/filesystem'
+import {
+  createFileSystemStorageProvider,
+  createWebStorageProvider,
+} from '@/core/store'
 import { Store } from '@/core/store/store'
+import { Platform } from 'react-native'
 
 export interface AgentDefinition {
   id: string
@@ -16,10 +20,18 @@ export interface AgentDefinition {
 export class AgentStore extends Store<AgentDefinition[]> {
   constructor() {
     super(
-      createFileSystemStorageProvider({
-        type: 'document',
-        filePath: 'agents.yaml',
-      }),
+      Platform.select({
+        ios: () =>
+          createFileSystemStorageProvider<AgentDefinition[]>({
+            type: 'document',
+            filePath: 'agents.yaml',
+          }),
+        default: () =>
+          createWebStorageProvider<AgentDefinition[]>({
+            type: 'local',
+            key: 'agents',
+          }),
+      })(),
       []
     )
   }
