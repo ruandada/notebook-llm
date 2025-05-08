@@ -1,4 +1,4 @@
-import { FlatList, Pressable, SafeAreaView, Text } from 'react-native'
+import { FlatList, Pressable, Text, TextInput } from 'react-native'
 import { View } from 'react-native'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'expo-router'
@@ -9,6 +9,9 @@ import { AgentDefinition, AgentStore } from '@/store/agents'
 import React, { memo, useMemo } from 'react'
 import words from 'lodash/words'
 import { useThemeColor } from '@/components/theme-provider'
+import { useSetScreenOptions } from '@/hooks/use-set-screen-options'
+
+import { PrettyScrollView } from '@/components/pretty-scroll-view'
 
 const AgentListItem: React.FC<{ agent: AgentDefinition }> = memo(
   ({ agent }) => {
@@ -40,32 +43,57 @@ const AgentListItem: React.FC<{ agent: AgentDefinition }> = memo(
   }
 )
 
+const AddButton: React.FC = memo(() => {
+  return (
+    <Link href="/agent-editor" asChild>
+      <Pressable>
+        <Feather name="plus" size={28} color={useThemeColor('tint')} />
+      </Pressable>
+    </Link>
+  )
+})
+
 export default function AgentListScreen() {
   const { t } = useTranslation()
-
   const store = useInstance(AgentStore)
   const agentList = useStore(store)
 
-  return (
-    <View className="flex-1">
-      <SafeAreaView>
-        <View className="flex flex-row items-center justify-between p-4">
-          <Text className="text-3xl font-bold text-label">
-            {t('my_sth', { name: t('agent') })}
-          </Text>
-          <Link href="/agent-editor" asChild>
-            <Pressable>
-              <Feather name="plus" size={28} color={useThemeColor('tint')} />
-            </Pressable>
-          </Link>
-        </View>
+  useSetScreenOptions({
+    headerShown: false,
+  })
 
+  return (
+    <PrettyScrollView
+      header={() => (
+        <>
+          <View className="flex-row items-center justify-between gap-2 mt-5">
+            <Text className="text-label text-4xl">
+              {t('my_sth', { name: t('agent') })}
+            </Text>
+            <AddButton />
+          </View>
+        </>
+      )}
+    >
+      {({ onScroll, headerHeight }) => (
         <FlatList
+          ListHeaderComponent={() => (
+            <View className="p-4">
+              <TextInput
+                placeholder={t('search')}
+                clearButtonMode="always"
+                className="bg-background rounded-lg h-12 p-2 text-label shadow-sm shadow-neutral-900/10 border border-border"
+              />
+            </View>
+          )}
+          className="flex-1 bg-secondaryBackground"
+          style={{ paddingTop: headerHeight }}
           data={agentList}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => <AgentListItem agent={item} />}
+          onScroll={onScroll}
         />
-      </SafeAreaView>
-    </View>
+      )}
+    </PrettyScrollView>
   )
 }

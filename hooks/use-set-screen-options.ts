@@ -3,7 +3,7 @@ import { useNavigation } from 'expo-router'
 import { useEffect } from 'react'
 
 export const useSetScreenOptions = (opt: NativeStackNavigationOptions) => {
-  const navigation = useNavigation()
+  let navigation = useNavigation()
 
   useEffect(() => {
     navigation.setOptions(opt)

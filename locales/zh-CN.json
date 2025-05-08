@@ -5,5 +5,7 @@
   "new_sth": "新建{{name}}",
   "home": "主页",
   "cancel": "取消",
-  "error": "错误"
+  "error": "错误",
+  "name": "名称",
+  "search": "搜索"
 }

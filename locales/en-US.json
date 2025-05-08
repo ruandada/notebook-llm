@@ -5,5 +5,7 @@
   "new_sth": "New {{name}}",
   "home": "Home",
   "cancel": "Cancel",
-  "error": "Error"
+  "error": "Error",
+  "name": "Name",
+  "search": "Search"
 }

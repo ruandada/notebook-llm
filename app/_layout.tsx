@@ -54,10 +54,7 @@ function RootLayoutNav() {
   return (
     <ThemeProvider>
       <Stack>
-        <Stack.Screen
-          name="(tabs)"
-          options={{ title: t('home'), headerShown: false }}
-        />
+        <Stack.Screen name="(tabs)" />
         <Stack.Screen name="agent-editor" options={{}} />
       </Stack>
     </ThemeProvider>

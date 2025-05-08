@@ -5,15 +5,20 @@ import { Tabs } from 'expo-router'
 
 import { useTranslation } from 'react-i18next'
 import { useThemeColor } from '@/components/theme-provider'
+import { useSetScreenOptions } from '@/hooks/use-set-screen-options'
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 export default function TabLayout() {
   const { t } = useTranslation()
 
+  useSetScreenOptions({
+    headerShown: false,
+  })
+
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
+        headerShown: true,
         tabBarActiveTintColor: useThemeColor('tint') as string,
       }}
     >
@@ -27,7 +32,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="two"
+        name="me"
         options={{
           title: t('me'),
           tabBarIcon: ({ color, size }) => (
