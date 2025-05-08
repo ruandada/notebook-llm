@@ -1,0 +1,9 @@
+{
+  "my_sth": "My {{name}}",
+  "agent": "Agent",
+  "me": "Me",
+  "new_sth": "New {{name}}",
+  "home": "Home",
+  "cancel": "Cancel",
+  "error": "Error"
+}

@@ -1,0 +1,9 @@
+{
+  "my_sth": "我的{{name}}",
+  "agent": "智能体",
+  "me": "我",
+  "new_sth": "新建{{name}}",
+  "home": "主页",
+  "cancel": "取消",
+  "error": "错误"
+}
