@@ -21,22 +21,36 @@ colors:
   background:
     light: '#FFFFFF'
     dark: '#000000'
-    ios: systemBackground
+    # light: '#FFFFFF'
+    # dark: '#000000'
+    # ios: systemBackground
 
   secondaryBackground:
-    light: '#F2F2F7'
-    dark: '#1C1C1E'
-    ios: secondarySystemBackground
+    light: '#FAFAFA'
+    dark: '#000000'
+    # light: '#F2F2F7'
+    # dark: '#1C1C1E'
+    # ios: secondarySystemBackground
 
   tertiaryBackground:
     light: '#FFFFFF'
     dark: '#2C2C2E'
     ios: tertiarySystemBackground
 
+  cardBackground:
+    light: '#FFFFFF'
+    dark: '#121212'
+
+  cardHoverBackground:
+    light: '#F2F2F2'
+    dark: '#161616'
+
   border:
-    light: '#C6C6C8'
-    dark: '#38383A'
-    ios: separator
+    light: '#EBEBEB'
+    dark: '#2d2d2d'
+    # light: '#C6C6C8'
+    # dark: '#38383A'
+    # ios: separator
 
   tint:
     light: '#18181b'

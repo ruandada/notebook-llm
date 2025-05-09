@@ -26,17 +26,15 @@ const AgentListItem: React.FC<{ agent: AgentDefinition }> = memo(
     }, [agent.title])
 
     return (
-      <Pressable>
-        <View className="flex-row items-center gap-4 p-4">
-          <View className="bg-violet-600 rounded-full flex-row items-center justify-center w-12 h-12">
-            <Text className="text-white">{avatarFallback}</Text>
-          </View>
-          <View>
-            <Text className="text-lg font-bold text-label">{agent.title}</Text>
-            <Text className="mt-1 text-md text-secondaryLabel">
-              {agent.description}
-            </Text>
-          </View>
+      <Pressable className="flex-row items-center gap-4 p-4 active:bg-cardHoverBackground">
+        <View className="bg-violet-600 rounded-full flex-row items-center justify-center w-12 h-12">
+          <Text className="text-white">{avatarFallback}</Text>
+        </View>
+        <View>
+          <Text className="text-lg font-bold text-label">{agent.title}</Text>
+          <Text className="mt-1 text-md text-secondaryLabel">
+            {agent.description}
+          </Text>
         </View>
       </Pressable>
     )
@@ -82,7 +80,7 @@ export default function AgentListScreen() {
               <TextInput
                 placeholder={t('search')}
                 clearButtonMode="always"
-                className="bg-background rounded-lg h-12 p-2 text-label shadow-sm shadow-neutral-900/10 border border-border"
+                className="bg-cardHoverBackground rounded-lg h-12 p-2 text-label border border-transparent focus:border-tint"
               />
             </View>
           )}

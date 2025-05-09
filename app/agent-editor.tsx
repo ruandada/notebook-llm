@@ -1,5 +1,7 @@
+import { Form } from '@/components/form'
+import { FormItem } from '@/components/form/form-item'
 import { useSetScreenOptions } from '@/hooks/use-set-screen-options'
-import { useAnimatedHeaderHeight } from '@react-navigation/native-stack'
+import { useHeaderHeight } from '@react-navigation/elements'
 import { useRouter } from 'expo-router'
 import React, { memo } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -30,20 +32,32 @@ const AgentEditorScreen: React.FC = memo(() => {
     presentation: 'modal',
     title: t('new_sth', { name: t('agent') }),
     headerLeft: () => <CancelButton />,
-    headerTransparent: true,
-    headerBlurEffect: 'regular',
+    headerLargeTitle: true,
   })
 
+  const headerHeight = useHeaderHeight()
+
   return (
-    <ScrollView className="flex-1 bg-background">
-      <SafeAreaView>
-        <View className="flex flex-col p-4 gap-4">
-          <TextInput
-            className="bg-secondaryBackground rounded-lg h-12 px-4 text-label text-lg"
-            placeholder={t('name')}
-          />
-        </View>
-      </SafeAreaView>
+    <ScrollView
+      className="flex-1 bg-secondaryBackground"
+      style={{ paddingTop: headerHeight }}
+    >
+      <View className="flex-1 p-4">
+        <Form>
+          <FormItem>
+            <TextInput
+              className="text-label text-xl h-10"
+              placeholder={t('name')}
+            />
+          </FormItem>
+          <FormItem>
+            <TextInput
+              className="text-label text-xl h-10"
+              placeholder={t('name')}
+            />
+          </FormItem>
+        </Form>
+      </View>
     </ScrollView>
   )
 })
