@@ -1,6 +1,10 @@
 import {
-  isClassProvider, isConstructorProvider, isFactoryProvider, isValueProvider,
+  isClassProvider,
+  isConstructorProvider,
+  isFactoryProvider,
+  isValueProvider,
 } from './is'
+import { requireMark } from './symbol'
 import { Token, Provider, ConstructorOf } from './type'
 
 export class Injector {
@@ -28,7 +32,9 @@ export class Injector {
     return result
   }
 
-  static setRootInjectorGetter(injectorGetter: (() => Injector) | undefined): void {
+  static setRootInjectorGetter(
+    injectorGetter: (() => Injector) | undefined
+  ): void {
     if (typeof injectorGetter === 'function') {
       Injector.rootInjectorGetter = injectorGetter
     } else {
@@ -49,18 +55,15 @@ export class Injector {
     token: Token<T>,
     current: Injector,
     from: Injector,
-    useCache: boolean = true,
+    useCache: boolean = true
   ): [T | undefined, boolean] {
     if (useCache && from.instanceCache.has(token)) {
-      return [
-        from.instanceCache.get(token),
-        true,
-      ]
+      return [from.instanceCache.get(token), true]
     }
     let resolvedInstnace: T | undefined
     let resolved: boolean = false
     if (!current.injectionStore.has(token)) {
-      [resolvedInstnace, resolved] = current.parent
+      ;[resolvedInstnace, resolved] = current.parent
         ? Injector.internalGetInstance(token, current.parent, from, useCache)
         : [undefined, false]
     } else {
@@ -69,14 +72,14 @@ export class Injector {
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const deps = Injector.resolveDependencies(provider!)
-      const depInstances = deps.map((dep) => (
-        from.getInstance(dep, useCache)
-      ))
+      const depInstances = deps.map((dep) =>
+        dep !== null ? from.getInstance(dep, useCache) : null
+      )
       if (isConstructorProvider(provider)) {
-      // eslint-disable-next-line new-cap
+        // eslint-disable-next-line new-cap
         resolvedInstnace = new provider(...depInstances)
       } else if (isClassProvider(provider)) {
-      // eslint-disable-next-line new-cap
+        // eslint-disable-next-line new-cap
         resolvedInstnace = new provider.useClass(...depInstances)
       } else if (isFactoryProvider(provider)) {
         resolvedInstnace = provider.useFactory(...depInstances)
@@ -93,20 +96,37 @@ export class Injector {
   }
 
   protected static resolveDependencies(provider: Provider): Token[] {
-    if (isConstructorProvider(provider)) {
-      return Reflect.getMetadata('design:paramtypes', provider) ?? []
-    } if (isClassProvider(provider)) {
-      return Reflect.getMetadata('design:paramtypes', provider.useClass) ?? []
-    } if (isFactoryProvider(provider)) {
+    if (isConstructorProvider(provider) || isClassProvider(provider)) {
+      const cls = isConstructorProvider(provider) ? provider : provider.useClass
+
+      const tokens = (cls as any)[requireMark]
+      if (tokens) {
+        return tokens
+      }
+
+      return Reflect.getMetadata('design:paramtypes', cls) ?? []
+    }
+
+    if (isFactoryProvider(provider)) {
       return provider.deps ?? []
     }
     return []
   }
 
-  getInstance<T = any>(token: Token<T>, useCache: boolean = true): T | undefined {
-    const [resolvedInstnace, resolved] = Injector.internalGetInstance(token, this, this, useCache)
+  getInstance<T = any>(
+    token: Token<T>,
+    useCache: boolean = true
+  ): T | undefined {
+    const [resolvedInstnace, resolved] = Injector.internalGetInstance(
+      token,
+      this,
+      this,
+      useCache
+    )
     if (!resolved) {
-      throw new Error(`di: cannot resolve provider for token ${token.toString()}`)
+      throw new Error(
+        `di: cannot resolve provider for token ${token.toString()}`
+      )
     }
     return resolvedInstnace
   }
@@ -116,9 +136,9 @@ export class Injector {
     if (isConstructorProvider(provider)) {
       token = provider
     } else if (
-      isClassProvider<T>(provider)
-      || isFactoryProvider<T>(provider)
-      || isValueProvider<T>(provider)
+      isClassProvider<T>(provider) ||
+      isFactoryProvider<T>(provider) ||
+      isValueProvider<T>(provider)
     ) {
       token = provider.provide
     }
@@ -126,7 +146,11 @@ export class Injector {
       throw new Error('cannot recognize provider')
     }
     if (this.injectionStore.has(token)) {
-      throw new Error(`the token ${(token as ConstructorOf<T>)?.name ?? token?.toString()} has already been registered`)
+      throw new Error(
+        `the token ${
+          (token as ConstructorOf<T>)?.name ?? token?.toString()
+        } has already been registered`
+      )
     }
     this.injectionStore.set(token, provider)
   }
@@ -158,9 +182,7 @@ export class Injector {
 
   clone(): Injector {
     const siblingInjector = new Injector(this.parent)
-    siblingInjector.registerProviders(
-      Array.from(this.injectionStore.values()),
-    )
+    siblingInjector.registerProviders(Array.from(this.injectionStore.values()))
     return siblingInjector
   }
 }

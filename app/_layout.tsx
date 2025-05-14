@@ -1,3 +1,5 @@
+import 'react-native-get-random-values'
+
 import { Stack } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
 import { useEffect } from 'react'
@@ -9,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppInit } from '@/hooks/use-app-init'
 import { Alert, BackHandler } from 'react-native'
 import { ThemeProvider } from '@/components/theme-provider'
+import { BlurView } from 'expo-blur'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -50,12 +53,20 @@ export default function RootLayout() {
 
 function RootLayoutNav() {
   const { t } = useTranslation()
-
   return (
     <ThemeProvider>
       <Stack>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="agent-editor" options={{}} />
+        <Stack.Screen
+          name="index"
+          options={{
+            title: 'Chat Test',
+            headerTitle: () => null,
+            headerTransparent: true,
+            headerBackground: () => (
+              <BlurView intensity={100} className="w-full h-full"></BlurView>
+            ),
+          }}
+        />
       </Stack>
     </ThemeProvider>
   )

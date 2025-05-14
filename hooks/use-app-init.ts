@@ -1,9 +1,9 @@
 import { useInstance } from '@/core/di'
-import { Store } from '@/core/store/store'
-import { AgentStore } from '@/store/agents'
+import { composeInitables, useInitableInit } from '@/core/initable'
+import { ModelStorage } from '@/dao/base'
+import { ChatMessageModel } from '@/dao/chat-message'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useFonts } from 'expo-font'
-import { useEffect, useState } from 'react'
 
 interface AppInitResult {
   loaded: boolean
@@ -16,21 +16,16 @@ export const useAppInit = (): AppInitResult => {
     ...FontAwesome.font,
   })
 
-  const [storeLoaded, setStoreLoaded] = useState(false)
-  const [storeError, setStoreError] = useState<Error | null>(null)
-
-  const stores: Store<any>[] = [useInstance(AgentStore)]
-
-  useEffect(() => {
-    Promise.all(stores.map((store) => store.syncAsync()))
-      .then(() => setStoreLoaded(true))
-      .catch((err) => {
-        setStoreError(err)
-      })
-  }, [])
+  const [initableLoaded, initableError] = useInitableInit(
+    composeInitables(
+      'sequence',
+      useInstance(ModelStorage),
+      composeInitables('parallel', useInstance(ChatMessageModel))
+    )
+  )
 
   return {
-    loaded: fontLoaded && storeLoaded,
-    error: fontError || storeError || null,
+    loaded: fontLoaded && initableLoaded,
+    error: fontError || initableError || null,
   }
 }
