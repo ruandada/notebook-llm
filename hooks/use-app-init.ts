@@ -1,7 +1,9 @@
 import { useInstance } from '@/core/di'
-import { composeInitables, useInitableInit } from '@/core/initable'
+import { compose, useInitableInit } from '@/core/initable'
+import { FileSystemCleaner } from '@/core/utils'
 import { ModelStorage } from '@/dao/base'
 import { ChatMessageModel } from '@/dao/chat-message'
+import { ConfigStore } from '@/store/config'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useFonts } from 'expo-font'
 
@@ -17,10 +19,18 @@ export const useAppInit = (): AppInitResult => {
   })
 
   const [initableLoaded, initableError] = useInitableInit(
-    composeInitables(
+    compose(
       'sequence',
-      useInstance(ModelStorage),
-      composeInitables('parallel', useInstance(ChatMessageModel))
+      // useInstance(FileSystemCleaner),
+      compose(
+        'parallel',
+        useInstance(ConfigStore),
+        compose(
+          'sequence',
+          useInstance(ModelStorage),
+          compose('parallel', useInstance(ChatMessageModel))
+        )
+      )
     )
   )
 

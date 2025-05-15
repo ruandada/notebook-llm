@@ -1,8 +1,5 @@
-import { useInstance } from '@/core/di'
-import { ChatMessage, ChatMessageModel } from '@/dao/chat-message'
-import { useRequest } from '@/hooks/use-request'
 import { useHeaderHeight } from '@react-navigation/elements'
-import React, { memo, useCallback, useEffect, useRef, useState } from 'react'
+import React, { memo, useCallback, useState } from 'react'
 import {
   View,
   Text,
@@ -16,11 +13,12 @@ import dayjs from 'dayjs'
 import { messageId } from '@/core/idgenerator'
 import { useHistoryMessages } from './use-history-messages'
 import { useMessageBuffer } from './use-message-buffer'
+import { useAssistantMessageBuilder } from './use-assistant-message-builder'
+import { ChatMessage } from '@/dao/chat-message'
 
 export const ChatTest: React.FC = memo(() => {
   const headerHeight = useHeaderHeight()
   const insects = useSafeAreaInsets()
-
   const [input, setInput] = useState('')
 
   const { historyMessages, appendMessages: appendHistoryMessages } =
@@ -33,8 +31,10 @@ export const ChatTest: React.FC = memo(() => {
       },
     })
 
+  const buildAssistantMessage = useAssistantMessageBuilder()
+
   const onSend = useCallback(() => {
-    appendMessageBuffer({
+    const userMessage: ChatMessage = {
       id: messageId(),
       time: new Date(),
       chatId: 'default',
@@ -43,25 +43,35 @@ export const ChatTest: React.FC = memo(() => {
       searchTerm: '',
       content: input,
       extra: null,
-    })
+    }
+    appendMessageBuffer(userMessage)
+
+    setTimeout(() => {
+      const { msg, backgroundTask } = buildAssistantMessage(userMessage)
+      appendMessageBuffer(msg, backgroundTask)
+    }, 100)
+
     setInput('')
-  }, [input])
+  }, [input, buildAssistantMessage, appendMessageBuffer])
 
   return (
     <>
-      <FlatList
-        style={{ paddingTop: headerHeight }}
-        data={[...(historyMessages || []), ...messageBuffer]}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View className="p-4">
-            <Text className="text-secondaryLabel">
-              {dayjs(item.time).format('YYYY-MM-DD HH:mm:ss')}
-            </Text>
-            <Text className="text-label text-lg">{item.content}</Text>
-          </View>
-        )}
-      ></FlatList>
+      <KeyboardAvoidingView behavior="padding">
+        <FlatList
+          style={{ paddingTop: headerHeight }}
+          data={[...(historyMessages || []), ...messageBuffer]}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => (
+            <View className="p-4">
+              <Text className="text-secondaryLabel">
+                {dayjs(item.time).format('YYYY-MM-DD HH:mm:ss')}
+              </Text>
+              <Text className="text-label text-lg">{item.content}</Text>
+            </View>
+          )}
+          ListFooterComponent={() => <View style={{ height: 100 }}></View>}
+        ></FlatList>
+      </KeyboardAvoidingView>
 
       <KeyboardAvoidingView
         behavior="padding"

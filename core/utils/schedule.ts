@@ -1,4 +1,4 @@
-import { lockId } from './idgenerator'
+import { lockId } from '../idgenerator'
 
 export const createAsyncLock = (
   queueLimit?: number,
@@ -44,5 +44,26 @@ export const createAsyncLock = (
     return createUnlocker(id)
   }
 
-  return lock
+  const withLock = async <T>(
+    fn: () => Promise<T>,
+    throwError?: boolean
+  ): Promise<T> => {
+    let unlock: () => void
+    try {
+      unlock = await lock()
+    } catch (e) {
+      if (throwError) {
+        throw e
+      }
+      return null!
+    }
+    const res = await fn()
+    unlock()
+    return res
+  }
+
+  return {
+    lock,
+    withLock,
+  }
 }

@@ -10,11 +10,9 @@ export interface ClassProvider<T> extends BaseProvider<T> {
   useClass: ConstructorOf<T>
 }
 
-export interface FactoryProvider<
-T, Deps extends Array<Token<any>> = Array<Token<any>>,
-> extends BaseProvider<T> {
-  useFactory: (...args: Deps[]) => T
-  deps?: Deps
+export interface FactoryProvider<T> extends BaseProvider<T> {
+  useFactory: (...args: any[]) => T
+  deps?: Token<any>[]
 }
 
 export interface ValueProvider<T> extends BaseProvider<T> {
@@ -22,4 +20,39 @@ export interface ValueProvider<T> extends BaseProvider<T> {
 }
 
 export type Provider<T = any> =
-  ConstructorOf<T> | ClassProvider<T> | FactoryProvider<T> | ValueProvider<T>
+  | ConstructorOf<T>
+  | ClassProvider<T>
+  | FactoryProvider<T>
+  | ValueProvider<T>
+
+export const factoryProvider = <T>(
+  provide: Token<T>,
+  useFactory: (...args: any) => T,
+  deps?: Token<any>[]
+): FactoryProvider<T> => {
+  return {
+    provide,
+    useFactory,
+    deps,
+  }
+}
+
+export const classProvider = <T>(
+  provide: Token<T>,
+  useClass: ConstructorOf<T>
+): ClassProvider<T> => {
+  return {
+    provide,
+    useClass,
+  }
+}
+
+export const valueProvider = <T>(
+  provide: Token<T>,
+  useValue: T
+): ValueProvider<T> => {
+  return {
+    provide,
+    useValue,
+  }
+}

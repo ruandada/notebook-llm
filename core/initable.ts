@@ -5,7 +5,7 @@ export interface Initable {
   release(): Promise<void>
 }
 
-export const composeInitables = (
+export const compose = (
   mode: 'sequence' | 'parallel',
   ...initables: Initable[]
 ): Initable => {

@@ -32,7 +32,7 @@ export class AgentStore extends Store<AgentDefinition[]> {
             key: 'agents',
           }),
       })(),
-      []
+      () => []
     )
   }
 }
