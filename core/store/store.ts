@@ -4,7 +4,7 @@ import debounce from 'lodash/debounce'
 import { Initable } from '../initable'
 
 export type Subscriber<T> = (newValue: T, oldValue: T) => void
-export type Updater<T> = (value: T) => T
+export type Updater<T> = (value: T) => void
 
 enableMapSet()
 setAutoFreeze(false)

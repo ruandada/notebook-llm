@@ -10,63 +10,35 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
-import { messageId } from '@/core/idgenerator'
-import { useHistoryMessages } from './use-history-messages'
-import { useMessageBuffer } from './use-message-buffer'
-import { useAssistantMessageBuilder } from './use-assistant-message-builder'
-import { ChatMessage } from '@/dao/chat-message'
+import { useMessageController } from './controller'
+import { buildTextMessage } from '@/dao/chat-message.type'
+import { MessageView } from './views'
 
 export const ChatTest: React.FC = memo(() => {
   const headerHeight = useHeaderHeight()
   const insects = useSafeAreaInsets()
   const [input, setInput] = useState('')
 
-  const { historyMessages, appendMessages: appendHistoryMessages } =
-    useHistoryMessages()
-
-  const { messageBuffer, appendMessage: appendMessageBuffer } =
-    useMessageBuffer({
-      onSubmit: async (messages) => {
-        await appendHistoryMessages(messages)
-      },
-    })
-
-  const buildAssistantMessage = useAssistantMessageBuilder()
+  const { controller, chatMessages } = useMessageController('default')
 
   const onSend = useCallback(() => {
-    const userMessage: ChatMessage = {
-      id: messageId(),
-      time: new Date(),
-      chatId: 'default',
-      role: 'user',
-      type: 'text',
-      searchTerm: '',
-      content: input,
-      extra: null,
-    }
-    appendMessageBuffer(userMessage)
-
-    setTimeout(() => {
-      const { msg, backgroundTask } = buildAssistantMessage(userMessage)
-      appendMessageBuffer(msg, backgroundTask)
-    }, 100)
-
+    controller.appendUserMessage(buildTextMessage(input, 'default', 'user'))
     setInput('')
-  }, [input, buildAssistantMessage, appendMessageBuffer])
+  }, [input])
 
   return (
     <>
       <KeyboardAvoidingView behavior="padding">
         <FlatList
           style={{ paddingTop: headerHeight }}
-          data={[...(historyMessages || []), ...messageBuffer]}
-          keyExtractor={(item) => item.id}
+          data={chatMessages}
+          keyExtractor={(item) => item.msg.id}
           renderItem={({ item }) => (
             <View className="p-4">
               <Text className="text-secondaryLabel">
-                {dayjs(item.time).format('YYYY-MM-DD HH:mm:ss')}
+                {dayjs(item.msg.time).format('YYYY-MM-DD HH:mm:ss')}
               </Text>
-              <Text className="text-label text-lg">{item.content}</Text>
+              <MessageView message={item.msg} status={item.status} />
             </View>
           )}
           ListFooterComponent={() => <View style={{ height: 100 }}></View>}

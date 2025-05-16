@@ -5,7 +5,7 @@ import { fetch } from 'expo/fetch'
 
 const symbol = Symbol('openai')
 
-interface OpenAIContext {
+export interface OpenAIContext {
   openai: OpenAI
   defaultModel: string
 }
@@ -55,3 +55,6 @@ Injector.$rootInjector.registerProvider(
 )
 
 export const useOpenAI = () => useInstance<OpenAIContext>(symbol)
+
+export const getOpenAIByInjector = (injector: Injector): OpenAIContext =>
+  injector.getInstance(symbol)!

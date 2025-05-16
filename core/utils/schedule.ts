@@ -67,3 +67,22 @@ export const createAsyncLock = (
     withLock,
   }
 }
+
+export const sleep = (ms: number): Promise<void> => {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+export const withTimeout = <F extends (...args: any[]) => Promise<any>>(
+  fn: F,
+  timeout: number
+): F => {
+  return (async (...args: any[]): Promise<any> => {
+    const [res, _] = await Promise.race([
+      fn(...args),
+      sleep(timeout).then(() => {
+        throw new Error(`timeout ${timeout}ms exceeded`)
+      }),
+    ])
+    return res
+  }) as F
+}

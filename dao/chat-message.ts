@@ -1,17 +1,7 @@
 import { Injectable, Require } from '@/core/di'
 import { inserts, ModelStorage, sql } from './base'
 import { Initable } from '@/core/initable'
-
-export interface ChatMessage {
-  id: string
-  time: Date
-  chatId: string
-  role: string
-  type: string
-  searchTerm: string
-  content: string
-  extra: {} | null
-}
+import { ChatMessage } from './chat-message.type'
 
 @Injectable()
 @Require(ModelStorage)
@@ -80,23 +70,41 @@ export class ChatMessageModel implements Initable {
       time: row.time.valueOf(),
       chat_id: row.chatId,
       role: row.role,
-      type: row.type,
       search_term: row.searchTerm || '',
-      content: row.content || '',
-      extra: row.extra ? JSON.stringify(row.extra) : '',
+
+      type: row.type,
+      content: JSON.stringify(row.content),
+      extra: row.extra ? JSON.stringify(row.extra) : '{}',
     }
   }
 
   protected unserialize(row: Record<string, any>): ChatMessage {
-    return {
+    const msg: ChatMessage = {
       id: row.id,
       time: new Date(row.time),
       chatId: row.chat_id,
       role: row.role,
-      type: row.type,
       searchTerm: row.search_term || '',
-      content: row.content,
-      extra: row.extra ? JSON.parse(row.extra) : null,
+      type: row.type,
+      content: null!,
+      extra: null!,
     }
+
+    try {
+      msg.content = JSON.parse(row.content)
+    } catch (e) {
+      msg.type = 'error'
+      msg.content = {
+        message: `failed to parse content: ${row.content}`,
+      }
+    }
+
+    try {
+      msg.extra = msg.extra ? JSON.parse(row.extra) : {}
+    } catch (e) {
+      msg.extra = {}
+    }
+
+    return msg
   }
 }

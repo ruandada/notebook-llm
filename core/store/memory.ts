@@ -1,9 +1,8 @@
 import { StorageProvider } from './abstract'
+import { Store } from './store'
 
-export const createMemoryStorageProvider = <T>(
-  defaultValue: () => T
-): StorageProvider<T> => {
-  let internalValue: T = defaultValue()
+export const createMemoryStorageProvider = <T>(): StorageProvider<T> => {
+  let internalValue: T = null!
 
   return {
     save: async (data: T) => {
@@ -13,7 +12,11 @@ export const createMemoryStorageProvider = <T>(
       return internalValue
     },
     isPresent: async (): Promise<boolean> => {
-      return true
+      return false
     },
   }
+}
+
+export const createMemoryStore = <T>(defaultValue: () => T): Store<T> => {
+  return new Store(createMemoryStorageProvider(), defaultValue)
 }
