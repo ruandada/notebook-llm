@@ -5,13 +5,10 @@ import { Store } from '@/core/store'
 import { createMemoryStore } from '@/core/store'
 import { ChatMessageModel } from '@/dao/chat-message'
 import { ChatMessage } from '@/dao/chat-message.type'
-import {
-  AsyncMessageBuilder,
-  MessageUpdateMethod,
-  MessageWithMetadata,
-} from './abstract'
+import { AsyncMessageBuilder, MessageWithMetadata } from './abstract'
 import { openaiMessageBuilder } from './openai-builder'
 import { createAsyncLock } from '@/core/utils'
+import { produce } from 'immer'
 
 export class MessageController implements Initable {
   // 从数据中获取的，已保存的消息
@@ -96,33 +93,17 @@ export class MessageController implements Initable {
     })
   }
 
-  protected createMessageUpdateMethod(
-    messageId: string
-  ): MessageUpdateMethod<any> {
-    return (by: (m: ChatMessage) => ChatMessage): void => {
-      this.messageBuffer.update((buf) => {
-        for (const item of buf) {
-          if (item.msg.id === messageId) {
-            item.msg = by(item.msg)
-            break
-          }
-        }
-      })
-    }
-  }
-
-  protected async appendBufferMessage(item: MessageWithMetadata) {
-    this.messageBuffer.update((buf) => [...buf, item])
-  }
-
   protected applyMessageBuilder(builder: AsyncMessageBuilder<any>): void {
     const msg = builder.create(this.chatId)
-    this.appendBufferMessage({
-      msg,
-      status: 'building',
-    })
+    this.messageBuffer.update((buf) => [
+      ...buf,
+      {
+        msg,
+        status: 'building',
+      },
+    ])
 
-    builder.build(this.createMessageUpdateMethod(msg.id)).then(() => {
+    builder.build(msg.id, this).then(() => {
       this.messageBuffer.update((buf) => {
         for (const item of buf) {
           if (item.msg.id === msg.id) {
@@ -133,11 +114,27 @@ export class MessageController implements Initable {
     })
   }
 
-  public async appendUserMessage(msg: ChatMessage) {
-    this.appendBufferMessage({
-      msg,
-      status: 'finished',
+  public updateBufferMessage<M extends ChatMessage>(
+    messageId: string,
+    by: (msg: M) => void
+  ) {
+    this.messageBuffer.update((buf) => {
+      for (const item of buf) {
+        if (item.msg.id === messageId) {
+          item.msg = produce(item.msg, by)
+        }
+      }
     })
+  }
+
+  public async appendUserMessage(msg: ChatMessage) {
+    this.messageBuffer.update((buf) => [
+      ...buf,
+      {
+        msg,
+        status: 'finished',
+      },
+    ])
 
     const builder = openaiMessageBuilder(this.openai, [
       ...(this.historyMessages.getValue() || []).map((item) => item.msg),

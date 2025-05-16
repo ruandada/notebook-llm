@@ -7,6 +7,7 @@ import {
   TextChatMessage,
 } from '@/dao/chat-message.type'
 import type { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
+import type { MessageController } from './message-controller'
 
 export const openaiMessageBuilder = (
   context: OpenAIContext,
@@ -14,7 +15,10 @@ export const openaiMessageBuilder = (
 ): AsyncMessageBuilder<StreamTextMessage> => {
   return {
     create: (chatId: string) => buildStreamTextMessage(chatId, 'assistant'),
-    build: async (update): Promise<void> => {
+    build: async (
+      messageId: string,
+      controller: MessageController
+    ): Promise<void> => {
       const { openai } = context
 
       const stream = await openai.chat.completions.create({
@@ -44,18 +48,17 @@ export const openaiMessageBuilder = (
       for await (const event of stream) {
         const delta = event.choices[0]?.delta?.content
         if (delta) {
-          update((msg) => ({
-            ...msg,
-            content: {
-              ...msg.content,
-              buffer: [...msg.content.buffer, delta],
-            },
-          }))
+          controller.updateBufferMessage<StreamTextMessage>(
+            messageId,
+            (msg) => {
+              msg.content.buffer.push(delta)
+            }
+          )
         }
       }
 
       // 最后将流式消息转换为文本消息
-      update((msg) => {
+      controller.updateBufferMessage<StreamTextMessage>(messageId, (msg) => {
         const textMsg: TextChatMessage = {
           ...msg,
           type: 'text',
