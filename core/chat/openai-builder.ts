@@ -4,7 +4,7 @@ import {
   buildStreamTextMessage,
   ChatMessage,
   StreamTextMessage,
-  TextChatMessage,
+  TextMessage,
 } from '@/dao/chat-message.type'
 import type { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import type { MessageController } from './message-controller'
@@ -59,7 +59,7 @@ export const openaiMessageBuilder = (
 
       // 最后将流式消息转换为文本消息
       controller.updateBufferMessage<StreamTextMessage>(messageId, (msg) => {
-        const textMsg: TextChatMessage = {
+        const textMsg: TextMessage = {
           ...msg,
           type: 'text',
           content: {

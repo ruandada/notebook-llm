@@ -10,7 +10,7 @@ import {
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
-import { useMessageController } from './controller'
+import { useMessageController } from '@/core/chat'
 import { buildTextMessage } from '@/dao/chat-message.type'
 import { MessageView } from './views'
 
@@ -22,7 +22,7 @@ export const ChatTest: React.FC = memo(() => {
   const { controller, chatMessages } = useMessageController('default')
 
   const onSend = useCallback(() => {
-    controller.appendUserMessage(buildTextMessage(input, 'default', 'user'))
+    controller.appendUserMessage(buildTextMessage('default', input, 'user'))
     setInput('')
   }, [input])
 

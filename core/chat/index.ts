@@ -13,16 +13,19 @@ export const useMessageController = (chatId: string) => {
   const { current: controller } = useFactoryRef(
     () => new MessageController(chatId, injector)
   )
-  useInitableInit(controller)
+  const [loaded, error] = useInitableInit(controller)
 
   const historyMessages = useStore(controller.getHistoryMessageStore())
   const messageBuffer = useStore(controller.getMessageBufferStore())
   const flushingList = useStore(controller.getFlushingListStore())
+
   return {
     controller,
     chatMessages: useMemo(
       () => [...historyMessages, ...flushingList, ...messageBuffer],
       [historyMessages, flushingList, messageBuffer]
     ),
+    loaded,
+    error,
   }
 }

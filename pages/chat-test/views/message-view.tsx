@@ -3,13 +3,13 @@ import {
   isStreamTextMessage,
   isTextMessage,
   StreamTextMessage,
-  TextChatMessage,
+  TextMessage,
 } from '@/dao/chat-message.type'
 import React, { memo } from 'react'
 import { ViewProps } from 'react-native'
 import { StreamTextMessageView } from './steram-text-message-view'
 import { TextMessageView } from './text-message-view'
-import { MessageWithMetadata } from '../controller'
+import { MessageWithMetadata } from '../../../core/chat'
 
 export interface MessageViewProps extends ViewProps {
   message: ChatMessage

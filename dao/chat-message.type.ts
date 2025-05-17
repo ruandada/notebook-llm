@@ -1,6 +1,6 @@
 import { messageId } from '@/core/idgenerator'
 
-export interface ChatMessageBase {
+export interface MessageBase {
   id: string
   time: Date
   chatId: string
@@ -9,34 +9,50 @@ export interface ChatMessageBase {
   extra: Record<string, any>
 }
 
-export interface TextChatMessage extends ChatMessageBase {
+export interface TextMessage extends MessageBase {
   type: 'text'
   content: {
     text: string
   }
 }
 
-export interface StreamTextMessage extends ChatMessageBase {
+export interface StreamTextMessage extends MessageBase {
   type: 'stream_text'
   content: {
     buffer: string[]
   }
 }
 
-export interface ErrorMessage extends ChatMessageBase {
+export interface ToolMessage extends MessageBase {
+  type: 'tool_message'
+  content: {
+    title: string
+    tool_id: string
+    tool_call_id: string
+    arguments?: Record<string, any>
+    result?: any
+    result_status?: 'success' | 'failed'
+  }
+}
+
+export interface ErrorMessage extends MessageBase {
   type: 'error'
   content: {
     message: string
   }
 }
 
-export type ChatMessage = TextChatMessage | StreamTextMessage | ErrorMessage
+export type ChatMessage =
+  | TextMessage
+  | StreamTextMessage
+  | ToolMessage
+  | ErrorMessage
 
 export const buildTextMessage = (
-  text: string,
   chatId: string,
+  text: string,
   role: string
-): TextChatMessage => ({
+): TextMessage => ({
   id: messageId(),
   time: new Date(),
   chatId: chatId,
@@ -49,13 +65,29 @@ export const buildTextMessage = (
   },
 })
 
+export const buildToolMessage = (chatId: string): ToolMessage => ({
+  id: messageId(),
+  time: new Date(),
+  chatId,
+  role: 'assistant',
+  searchTerm: '',
+  extra: {},
+  type: 'tool_message',
+  content: {
+    tool_id: '',
+    tool_call_id: '',
+    arguments: {},
+    title: '',
+  },
+})
+
 export const buildStreamTextMessage = (
   chatId: string,
   role: string = 'assistant'
 ): StreamTextMessage => ({
   id: messageId(),
   time: new Date(),
-  chatId: chatId,
+  chatId,
   role: role,
   searchTerm: '',
   extra: {},
@@ -65,9 +97,24 @@ export const buildStreamTextMessage = (
   },
 })
 
-export const isTextMessage = (
-  message: ChatMessage
-): message is TextChatMessage => {
+export const buildErrorMessage = (
+  chatId: string,
+  errorMessage: string,
+  role: string = 'assistant'
+): ErrorMessage => ({
+  id: messageId(),
+  time: new Date(),
+  chatId,
+  role,
+  searchTerm: '',
+  extra: {},
+  type: 'error',
+  content: {
+    message: errorMessage,
+  },
+})
+
+export const isTextMessage = (message: ChatMessage): message is TextMessage => {
   return message.type === 'text'
 }
 

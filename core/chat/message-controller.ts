@@ -9,6 +9,8 @@ import { AsyncMessageBuilder, MessageWithMetadata } from './abstract'
 import { openaiMessageBuilder } from './openai-builder'
 import { createAsyncLock } from '@/core/utils'
 import { produce } from 'immer'
+import { ToolController } from './tool-controller'
+import { getBuiltinTools } from './tool-builtin'
 
 export class MessageController implements Initable {
   // 从数据中获取的，已保存的消息
@@ -26,6 +28,8 @@ export class MessageController implements Initable {
 
   protected readonly openai: OpenAIContext
 
+  protected readonly toolController: ToolController
+
   constructor(protected readonly chatId: string, injector: Injector) {
     this.historyMessages = createMemoryStore<MessageWithMetadata[]>(() => [])
     this.flushingList = createMemoryStore<MessageWithMetadata[]>(() => [])
@@ -33,10 +37,12 @@ export class MessageController implements Initable {
 
     this.chatMessageModel = injector.getInstance(ChatMessageModel)!
     this.openai = getOpenAIByInjector(injector)
-
-    this.handleMessageBufferChange = this.handleMessageBufferChange.bind(this)
-    this.handleFlushingListChange = this.handleFlushingListChange.bind(this)
+    ;[this.onMessageBufferChange, this.onFlushingListChange] = [
+      this.onMessageBufferChange.bind(this),
+      this.onFlushingListChange.bind(this),
+    ]
     this.asyncLock = createAsyncLock(1, 'latest')
+    this.toolController = new ToolController(getBuiltinTools())
   }
 
   async init(): Promise<void> {
@@ -49,18 +55,16 @@ export class MessageController implements Initable {
       }))
     )
 
-    this.messageBuffer.subscribe(this.handleMessageBufferChange)
-    this.flushingList.subscribe(this.handleFlushingListChange)
+    this.messageBuffer.subscribe(this.onMessageBufferChange)
+    this.flushingList.subscribe(this.onFlushingListChange)
   }
 
   async release(): Promise<void> {
-    this.messageBuffer.unsubscribe(this.handleMessageBufferChange)
-    this.flushingList.unsubscribe(this.handleFlushingListChange)
+    this.messageBuffer.unsubscribe(this.onMessageBufferChange)
+    this.flushingList.unsubscribe(this.onFlushingListChange)
   }
 
-  protected handleMessageBufferChange(
-    messageBuffer: MessageWithMetadata[]
-  ): void {
+  protected onMessageBufferChange(messageBuffer: MessageWithMetadata[]): void {
     const finishedMessages: MessageWithMetadata[] = []
     const restMessages: MessageWithMetadata[] = []
 
@@ -78,7 +82,7 @@ export class MessageController implements Initable {
     }
   }
 
-  protected async handleFlushingListChange(
+  protected async onFlushingListChange(
     messages: MessageWithMetadata[]
   ): Promise<void> {
     if (!messages.length) {
@@ -93,7 +97,7 @@ export class MessageController implements Initable {
     })
   }
 
-  protected applyMessageBuilder(builder: AsyncMessageBuilder<any>): void {
+  public applyMessageBuilder(builder: AsyncMessageBuilder<any>): void {
     const msg = builder.create(this.chatId)
     this.messageBuffer.update((buf) => [
       ...buf,
