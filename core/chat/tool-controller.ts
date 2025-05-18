@@ -2,6 +2,7 @@ import { HttpTool, isBuiltinTool, isHttpTool, Tool } from '@/dao/tool.type'
 import { Ajv, ValidateFunction } from 'ajv'
 
 import { fetch } from 'expo/fetch'
+import type { ChatCompletionTool } from 'openai/resources/index.mjs'
 
 export class ToolController {
   protected readonly ajv: Ajv
@@ -23,6 +24,27 @@ export class ToolController {
       throw new Error(`tool ${tool.name} has been registered`)
     }
     this.store.set(tool.name, tool)
+  }
+
+  public unregister(toolName: string): boolean {
+    return this.store.delete(toolName)
+  }
+
+  public getTool(toolName: string): Tool | undefined {
+    return this.store.get(toolName)
+  }
+
+  public getOpenAITools(): ChatCompletionTool[] {
+    return Array.from(this.store.values()).map((tool) => {
+      return {
+        type: 'function',
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: tool.schema,
+        },
+      }
+    })
   }
 
   public async run(toolName: string, parameter: string): Promise<any> {

@@ -1,70 +1,145 @@
-import { getOpenAIByInjector, OpenAIContext } from '@/core/ai'
-import { Injector } from '@/core/di'
+import { OpenAIContext } from '@/core/ai'
 import { Initable } from '@/core/initable'
 import { Store } from '@/core/store'
 import { createMemoryStore } from '@/core/store'
 import { ChatMessageModel } from '@/dao/chat-message'
-import { ChatMessage } from '@/dao/chat-message.type'
+import { ChatMessage, isEmptyMessage } from '@/dao/chat-message.type'
 import { AsyncMessageBuilder, MessageWithMetadata } from './abstract'
-import { openaiMessageBuilder } from './openai-builder'
+import { assistantMessageBuilder } from './assistant-message-builder'
 import { createAsyncLock } from '@/core/utils'
-import { produce } from 'immer'
 import { ToolController } from './tool-controller'
 import { getBuiltinTools } from './tool-builtin'
 
 export class MessageController implements Initable {
-  // 从数据中获取的，已保存的消息
-  protected readonly historyMessages: Store<MessageWithMetadata[]>
-
-  // 正在保存的消息
-  protected readonly flushingList: Store<MessageWithMetadata[]>
-
-  // 正在处理中的消息（还不能保存）
-  protected readonly messageBuffer: Store<MessageWithMetadata[]>
-
-  protected readonly chatMessageModel: ChatMessageModel
+  protected readonly store: {
+    historyMessages: Store<MessageWithMetadata[]>
+    doneMessages: Store<MessageWithMetadata[]>
+    messageBuffer: Store<MessageWithMetadata[]>
+  }
 
   protected readonly asyncLock: ReturnType<typeof createAsyncLock>
 
-  protected readonly openai: OpenAIContext
-
   protected readonly toolController: ToolController
 
-  constructor(protected readonly chatId: string, injector: Injector) {
-    this.historyMessages = createMemoryStore<MessageWithMetadata[]>(() => [])
-    this.flushingList = createMemoryStore<MessageWithMetadata[]>(() => [])
-    this.messageBuffer = createMemoryStore<MessageWithMetadata[]>(() => [])
-
-    this.chatMessageModel = injector.getInstance(ChatMessageModel)!
-    this.openai = getOpenAIByInjector(injector)
-    ;[this.onMessageBufferChange, this.onFlushingListChange] = [
+  constructor(
+    protected readonly chatId: string,
+    protected readonly chatMessageModel: ChatMessageModel,
+    protected readonly openai: OpenAIContext
+  ) {
+    this.store = {
+      historyMessages: createMemoryStore<MessageWithMetadata[]>(() => []),
+      doneMessages: createMemoryStore<MessageWithMetadata[]>(() => []),
+      messageBuffer: createMemoryStore<MessageWithMetadata[]>(() => []),
+    }
+    ;[this.onMessageBufferChange, this.onDoneMessagesChange] = [
       this.onMessageBufferChange.bind(this),
-      this.onFlushingListChange.bind(this),
+      this.onDoneMessagesChange.bind(this),
     ]
     this.asyncLock = createAsyncLock(1, 'latest')
     this.toolController = new ToolController(getBuiltinTools())
   }
 
+  public getChatId(): string {
+    return this.chatId
+  }
+
+  public async appendUserMessage(msg: ChatMessage) {
+    this.store.messageBuffer.update((buf) => [
+      ...buf,
+      {
+        msg,
+        status: 'finished',
+      },
+    ])
+
+    const builder = assistantMessageBuilder({
+      context: this.openai,
+      historyMessages: [
+        ...(this.store.historyMessages.getValue() || []).map(
+          (item) => item.msg
+        ),
+        msg,
+      ],
+      tools: this.toolController,
+    })
+
+    this.applyMessageBuilder(builder)
+  }
+
+  public applyMessageBuilder(builder: AsyncMessageBuilder): void {
+    const msg = builder.create(this.chatId)
+    this.store.messageBuffer.update((buf) => [
+      ...buf,
+      {
+        msg,
+        status: 'building',
+      },
+    ])
+
+    builder.build(msg.id, this).then(() => {
+      this.store.messageBuffer.update((buf) => {
+        for (const item of buf) {
+          if (item.msg.id === msg.id) {
+            item.status = 'finished'
+          }
+        }
+      })
+    })
+  }
+
+  public updateBufferMessage<M extends ChatMessage>(
+    messageId: string,
+    by: (msg: M) => ChatMessage
+  ) {
+    this.store.messageBuffer.update((buf) => {
+      for (const item of buf) {
+        if (item.msg.id === messageId) {
+          item.msg = by(item.msg as M)
+        }
+      }
+    })
+  }
+
+  public getBufferMessageById(
+    messageId: string
+  ): MessageWithMetadata | undefined {
+    return this.store.messageBuffer
+      .getValue()
+      .find((item) => item.msg.id === messageId)
+  }
+
+  public getHistoryMessageStore(): Store<MessageWithMetadata[]> {
+    return this.store.historyMessages
+  }
+
+  public getMessageBufferStore(): Store<MessageWithMetadata[]> {
+    return this.store.messageBuffer
+  }
+
+  public getDoneMessageStore(): Store<MessageWithMetadata[]> {
+    return this.store.doneMessages
+  }
+
   async init(): Promise<void> {
     const messages = await this.chatMessageModel.getByChatId(this.chatId)
 
-    this.historyMessages.update(
+    this.store.historyMessages.update(
       messages.map((msg) => ({
         msg,
         status: 'finished',
       }))
     )
 
-    this.messageBuffer.subscribe(this.onMessageBufferChange)
-    this.flushingList.subscribe(this.onFlushingListChange)
+    this.store.messageBuffer.subscribe(this.onMessageBufferChange)
+    this.store.doneMessages.subscribe(this.onDoneMessagesChange)
   }
 
   async release(): Promise<void> {
-    this.messageBuffer.unsubscribe(this.onMessageBufferChange)
-    this.flushingList.unsubscribe(this.onFlushingListChange)
+    this.store.messageBuffer.unsubscribe(this.onMessageBufferChange)
+    this.store.doneMessages.unsubscribe(this.onDoneMessagesChange)
   }
 
-  protected onMessageBufferChange(messageBuffer: MessageWithMetadata[]): void {
+  private onMessageBufferChange(messageBuffer: MessageWithMetadata[]): void {
     const finishedMessages: MessageWithMetadata[] = []
     const restMessages: MessageWithMetadata[] = []
 
@@ -77,12 +152,12 @@ export class MessageController implements Initable {
     }
 
     if (finishedMessages.length > 0) {
-      this.flushingList.update((buf) => [...buf, ...finishedMessages])
-      this.messageBuffer.update(restMessages)
+      this.store.doneMessages.update((buf) => [...buf, ...finishedMessages])
+      this.store.messageBuffer.update(restMessages)
     }
   }
 
-  protected async onFlushingListChange(
+  private async onDoneMessagesChange(
     messages: MessageWithMetadata[]
   ): Promise<void> {
     if (!messages.length) {
@@ -92,71 +167,11 @@ export class MessageController implements Initable {
     await this.asyncLock.withLock(async (): Promise<void> => {
       await this.chatMessageModel.insert(messages.map((item) => item.msg))
 
-      this.historyMessages.update((buf) => [...buf, ...messages])
-      this.flushingList.update([])
+      this.store.historyMessages.update((buf) => [
+        ...buf,
+        ...messages.filter((msg) => !isEmptyMessage(msg.msg)),
+      ])
+      this.store.doneMessages.update([])
     })
-  }
-
-  public applyMessageBuilder(builder: AsyncMessageBuilder<any>): void {
-    const msg = builder.create(this.chatId)
-    this.messageBuffer.update((buf) => [
-      ...buf,
-      {
-        msg,
-        status: 'building',
-      },
-    ])
-
-    builder.build(msg.id, this).then(() => {
-      this.messageBuffer.update((buf) => {
-        for (const item of buf) {
-          if (item.msg.id === msg.id) {
-            item.status = 'finished'
-          }
-        }
-      })
-    })
-  }
-
-  public updateBufferMessage<M extends ChatMessage>(
-    messageId: string,
-    by: (msg: M) => void
-  ) {
-    this.messageBuffer.update((buf) => {
-      for (const item of buf) {
-        if (item.msg.id === messageId) {
-          item.msg = produce(item.msg, by)
-        }
-      }
-    })
-  }
-
-  public async appendUserMessage(msg: ChatMessage) {
-    this.messageBuffer.update((buf) => [
-      ...buf,
-      {
-        msg,
-        status: 'finished',
-      },
-    ])
-
-    const builder = openaiMessageBuilder(this.openai, [
-      ...(this.historyMessages.getValue() || []).map((item) => item.msg),
-      msg,
-    ])
-
-    this.applyMessageBuilder(builder)
-  }
-
-  public getHistoryMessageStore(): Store<MessageWithMetadata[]> {
-    return this.historyMessages
-  }
-
-  public getMessageBufferStore(): Store<MessageWithMetadata[]> {
-    return this.messageBuffer
-  }
-
-  public getFlushingListStore(): Store<MessageWithMetadata[]> {
-    return this.flushingList
   }
 }

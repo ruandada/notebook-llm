@@ -1,22 +1,22 @@
 import { JSONSchemaType } from 'ajv'
 
-export interface ToolBase {
+export interface ToolBase<T = any> {
   id: string
   name: string
   title: string
   description: string
-  schema: JSONSchemaType<any>
+  schema: JSONSchemaType<T>
   collectionId?: string
 }
 
-export interface BuiltinTool extends ToolBase {
+export interface BuiltinTool<T = any> extends ToolBase<T> {
   type: 'builtin'
   implemention: {
-    run: (parameters: any) => Promise<any>
+    run: (parameters: T) => Promise<any>
   }
 }
 
-export interface HttpTool extends ToolBase {
+export interface HttpTool<T = any> extends ToolBase<T> {
   type: 'http'
   implemention: {
     url: string
@@ -33,4 +33,22 @@ export const isBuiltinTool = (tool: Tool): tool is BuiltinTool => {
 
 export const isHttpTool = (tool: Tool): tool is HttpTool => {
   return tool.type === 'http'
+}
+
+export const buildBuiltinTool = <T>(
+  name: string,
+  title: string,
+  description: string,
+  schema: JSONSchemaType<T>,
+  implemention: BuiltinTool['implemention']
+): BuiltinTool<T> => {
+  return {
+    id: `builtin:${name}`,
+    name,
+    type: 'builtin',
+    title: title,
+    description: description,
+    schema,
+    implemention,
+  }
 }

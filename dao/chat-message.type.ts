@@ -1,12 +1,24 @@
 import { messageId } from '@/core/idgenerator'
 
+export interface ToolCallData {
+  title: string
+  tool_id: string
+  tool_name: string
+  tool_call_id: string
+  parameter: string
+  result?: any
+  result_status?: 'success' | 'failed'
+}
+
 export interface MessageBase {
   id: string
   time: Date
   chatId: string
-  role: string
+  role: 'user' | 'assistant' | 'tool' | 'system'
   searchTerm: string
-  extra: Record<string, any>
+  extra: {
+    tool_call?: ToolCallData
+  }
 }
 
 export interface TextMessage extends MessageBase {
@@ -23,18 +35,6 @@ export interface StreamTextMessage extends MessageBase {
   }
 }
 
-export interface ToolMessage extends MessageBase {
-  type: 'tool_message'
-  content: {
-    title: string
-    tool_id: string
-    tool_call_id: string
-    arguments?: Record<string, any>
-    result?: any
-    result_status?: 'success' | 'failed'
-  }
-}
-
 export interface ErrorMessage extends MessageBase {
   type: 'error'
   content: {
@@ -42,16 +42,12 @@ export interface ErrorMessage extends MessageBase {
   }
 }
 
-export type ChatMessage =
-  | TextMessage
-  | StreamTextMessage
-  | ToolMessage
-  | ErrorMessage
+export type ChatMessage = TextMessage | StreamTextMessage | ErrorMessage
 
 export const buildTextMessage = (
   chatId: string,
   text: string,
-  role: string
+  role: MessageBase['role']
 ): TextMessage => ({
   id: messageId(),
   time: new Date(),
@@ -65,25 +61,9 @@ export const buildTextMessage = (
   },
 })
 
-export const buildToolMessage = (chatId: string): ToolMessage => ({
-  id: messageId(),
-  time: new Date(),
-  chatId,
-  role: 'assistant',
-  searchTerm: '',
-  extra: {},
-  type: 'tool_message',
-  content: {
-    tool_id: '',
-    tool_call_id: '',
-    arguments: {},
-    title: '',
-  },
-})
-
 export const buildStreamTextMessage = (
   chatId: string,
-  role: string = 'assistant'
+  role: MessageBase['role'] = 'assistant'
 ): StreamTextMessage => ({
   id: messageId(),
   time: new Date(),
@@ -100,7 +80,7 @@ export const buildStreamTextMessage = (
 export const buildErrorMessage = (
   chatId: string,
   errorMessage: string,
-  role: string = 'assistant'
+  role: MessageBase['role'] = 'assistant'
 ): ErrorMessage => ({
   id: messageId(),
   time: new Date(),
@@ -128,4 +108,18 @@ export const isErrorMessage = (
   message: ChatMessage
 ): message is ErrorMessage => {
   return message.type === 'error'
+}
+
+export const isEmptyMessage = (message: ChatMessage): boolean => {
+  if (message.extra?.tool_call) {
+    return false
+  }
+
+  return isTextMessage(message)
+    ? !message.content.text
+    : isStreamTextMessage(message)
+    ? !message.content.buffer.length
+    : isErrorMessage(message)
+    ? !message.content.message
+    : false
 }

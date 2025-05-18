@@ -6,7 +6,7 @@ export interface MessageWithMetadata<M extends ChatMessage = ChatMessage> {
   status?: 'finished' | 'building'
 }
 
-export interface AsyncMessageBuilder<M extends ChatMessage> {
-  create: (chatId: string) => M
+export interface AsyncMessageBuilder {
+  create: (chatId: string) => ChatMessage
   build: (messageId: string, controller: MessageController) => Promise<void>
 }
