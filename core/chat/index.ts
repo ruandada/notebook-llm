@@ -18,15 +18,20 @@ export const useMessageController = (chatId: string) => {
   )
   const [loaded, error] = useInitableInit(controller)
 
-  const historyMessages = useStore(controller.getHistoryMessageStore())
-  const doneMessages = useStore(controller.getDoneMessageStore())
-  const messageBuffer = useStore(controller.getMessageBufferStore())
+  const stores = controller.getStores()
+  const historyMessages = useStore(stores.history)
+  const justFinishedMessages = useStore(stores.justFinished)
+  const processingMessages = useStore(stores.processing)
 
   return {
     controller,
     chatMessages: useMemo(
-      () => [...historyMessages, ...doneMessages, ...messageBuffer],
-      [historyMessages, doneMessages, messageBuffer]
+      () => [
+        ...historyMessages,
+        ...justFinishedMessages,
+        ...processingMessages,
+      ],
+      [historyMessages, justFinishedMessages, processingMessages]
     ),
     loaded,
     error,

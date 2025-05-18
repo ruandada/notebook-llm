@@ -102,7 +102,7 @@ export const assistantMessageBuilder = ({
 
         if (delta.content) {
           const text = delta.content
-          controller.updateBufferMessage<StreamTextMessage>(
+          controller.updateProcessingMessage<StreamTextMessage>(
             messageId,
             (msg): StreamTextMessage => {
               return produce(msg, (draft) => {
@@ -119,7 +119,7 @@ export const assistantMessageBuilder = ({
             const toolName = toolCall.function.name
             const tool = tools.getTool(toolName)
             if (!tool) {
-              controller.updateBufferMessage<StreamTextMessage>(
+              controller.updateProcessingMessage<StreamTextMessage>(
                 messageId,
                 (msg): StreamTextMessage => ({
                   ...msg,
@@ -144,7 +144,7 @@ export const assistantMessageBuilder = ({
 
             const parameter = toolCall.function.arguments || '{}'
             const toolCallId = toolCall.id
-            controller.updateBufferMessage<StreamTextMessage>(
+            controller.updateProcessingMessage<StreamTextMessage>(
               messageId,
               (msg): StreamTextMessage => ({
                 ...msg,
@@ -164,7 +164,7 @@ export const assistantMessageBuilder = ({
             tools
               .run(toolName, parameter)
               .then((result) => {
-                controller.updateBufferMessage<StreamTextMessage>(
+                controller.updateProcessingMessage<StreamTextMessage>(
                   messageId,
                   (msg): StreamTextMessage =>
                     produce(msg, (draft) => {
@@ -174,7 +174,7 @@ export const assistantMessageBuilder = ({
                 )
               })
               .catch((reason?: any) => {
-                controller.updateBufferMessage<StreamTextMessage>(
+                controller.updateProcessingMessage<StreamTextMessage>(
                   messageId,
                   (msg): StreamTextMessage =>
                     produce(msg, (draft) => {
@@ -195,7 +195,7 @@ export const assistantMessageBuilder = ({
                   return
                 }
                 const currentMessage =
-                  controller.getBufferMessageById(messageId)
+                  controller.getProcessingMessageById(messageId)
                 if (!currentMessage) {
                   return
                 }
@@ -214,17 +214,20 @@ export const assistantMessageBuilder = ({
       }
 
       // 最后将流式消息转换为文本消息
-      controller.updateBufferMessage<StreamTextMessage>(messageId, (msg) => {
-        const textMsg: TextMessage = {
-          ...msg,
-          type: 'text',
-          content: {
-            text: msg.content.buffer.join(''),
-          },
-        }
+      controller.updateProcessingMessage<StreamTextMessage>(
+        messageId,
+        (msg) => {
+          const textMsg: TextMessage = {
+            ...msg,
+            type: 'text',
+            content: {
+              text: msg.content.buffer.join(''),
+            },
+          }
 
-        return textMsg
-      })
+          return textMsg
+        }
+      )
     },
   }
 }

@@ -9,15 +9,18 @@ import { assistantMessageBuilder } from './assistant-message-builder'
 import { createAsyncLock } from '@/core/utils'
 import { ToolController } from './tool-controller'
 import { getBuiltinTools } from './tool-builtin'
+import { AsyncLock } from '../utils/schedule'
 
 export class MessageController implements Initable {
-  protected readonly store: {
-    historyMessages: Store<MessageWithMetadata[]>
-    doneMessages: Store<MessageWithMetadata[]>
-    messageBuffer: Store<MessageWithMetadata[]>
+  protected readonly stages: {
+    history: Store<MessageWithMetadata[]>
+    justFinished: Store<MessageWithMetadata[]>
+    processing: Store<MessageWithMetadata[]>
   }
 
-  protected readonly asyncLock: ReturnType<typeof createAsyncLock>
+  protected readonly locks: {
+    justFinished: AsyncLock
+  }
 
   protected readonly toolController: ToolController
 
@@ -26,16 +29,19 @@ export class MessageController implements Initable {
     protected readonly chatMessageModel: ChatMessageModel,
     protected readonly openai: OpenAIContext
   ) {
-    this.store = {
-      historyMessages: createMemoryStore<MessageWithMetadata[]>(() => []),
-      doneMessages: createMemoryStore<MessageWithMetadata[]>(() => []),
-      messageBuffer: createMemoryStore<MessageWithMetadata[]>(() => []),
+    this.stages = {
+      history: createMemoryStore<MessageWithMetadata[]>(() => []),
+      justFinished: createMemoryStore<MessageWithMetadata[]>(() => []),
+      processing: createMemoryStore<MessageWithMetadata[]>(() => []),
     }
-    ;[this.onMessageBufferChange, this.onDoneMessagesChange] = [
-      this.onMessageBufferChange.bind(this),
-      this.onDoneMessagesChange.bind(this),
+
+    this.locks = {
+      justFinished: createAsyncLock(1, 'latest'),
+    }
+    ;[this.onProcessingMessagesChange, this.onJustFinishedMessagesChange] = [
+      this.onProcessingMessagesChange.bind(this),
+      this.onJustFinishedMessagesChange.bind(this),
     ]
-    this.asyncLock = createAsyncLock(1, 'latest')
     this.toolController = new ToolController(getBuiltinTools())
   }
 
@@ -44,7 +50,7 @@ export class MessageController implements Initable {
   }
 
   public async appendUserMessage(msg: ChatMessage) {
-    this.store.messageBuffer.update((buf) => [
+    this.stages.processing.update((buf) => [
       ...buf,
       {
         msg,
@@ -55,9 +61,7 @@ export class MessageController implements Initable {
     const builder = assistantMessageBuilder({
       context: this.openai,
       historyMessages: [
-        ...(this.store.historyMessages.getValue() || []).map(
-          (item) => item.msg
-        ),
+        ...(this.stages.history.getValue() || []).map((item) => item.msg),
         msg,
       ],
       tools: this.toolController,
@@ -68,7 +72,7 @@ export class MessageController implements Initable {
 
   public applyMessageBuilder(builder: AsyncMessageBuilder): void {
     const msg = builder.create(this.chatId)
-    this.store.messageBuffer.update((buf) => [
+    this.stages.processing.update((buf) => [
       ...buf,
       {
         msg,
@@ -77,7 +81,7 @@ export class MessageController implements Initable {
     ])
 
     builder.build(msg.id, this).then(() => {
-      this.store.messageBuffer.update((buf) => {
+      this.stages.processing.update((buf) => {
         for (const item of buf) {
           if (item.msg.id === msg.id) {
             item.status = 'finished'
@@ -87,11 +91,11 @@ export class MessageController implements Initable {
     })
   }
 
-  public updateBufferMessage<M extends ChatMessage>(
+  public updateProcessingMessage<M extends ChatMessage>(
     messageId: string,
     by: (msg: M) => ChatMessage
   ) {
-    this.store.messageBuffer.update((buf) => {
+    this.stages.processing.update((buf) => {
       for (const item of buf) {
         if (item.msg.id === messageId) {
           item.msg = by(item.msg as M)
@@ -100,50 +104,42 @@ export class MessageController implements Initable {
     })
   }
 
-  public getBufferMessageById(
+  public getProcessingMessageById(
     messageId: string
   ): MessageWithMetadata | undefined {
-    return this.store.messageBuffer
+    return this.stages.processing
       .getValue()
       .find((item) => item.msg.id === messageId)
   }
 
-  public getHistoryMessageStore(): Store<MessageWithMetadata[]> {
-    return this.store.historyMessages
-  }
-
-  public getMessageBufferStore(): Store<MessageWithMetadata[]> {
-    return this.store.messageBuffer
-  }
-
-  public getDoneMessageStore(): Store<MessageWithMetadata[]> {
-    return this.store.doneMessages
+  public getStores(): typeof this.stages {
+    return this.stages
   }
 
   async init(): Promise<void> {
     const messages = await this.chatMessageModel.getByChatId(this.chatId)
 
-    this.store.historyMessages.update(
+    this.stages.history.update(
       messages.map((msg) => ({
         msg,
         status: 'finished',
       }))
     )
 
-    this.store.messageBuffer.subscribe(this.onMessageBufferChange)
-    this.store.doneMessages.subscribe(this.onDoneMessagesChange)
+    this.stages.processing.subscribe(this.onProcessingMessagesChange)
+    this.stages.justFinished.subscribe(this.onJustFinishedMessagesChange)
   }
 
   async release(): Promise<void> {
-    this.store.messageBuffer.unsubscribe(this.onMessageBufferChange)
-    this.store.doneMessages.unsubscribe(this.onDoneMessagesChange)
+    this.stages.processing.unsubscribe(this.onProcessingMessagesChange)
+    this.stages.justFinished.unsubscribe(this.onJustFinishedMessagesChange)
   }
 
-  private onMessageBufferChange(messageBuffer: MessageWithMetadata[]): void {
+  private onProcessingMessagesChange(messages: MessageWithMetadata[]): void {
     const finishedMessages: MessageWithMetadata[] = []
     const restMessages: MessageWithMetadata[] = []
 
-    for (const item of messageBuffer) {
+    for (const item of messages) {
       if (item.status === 'finished') {
         finishedMessages.push(item)
       } else {
@@ -152,26 +148,26 @@ export class MessageController implements Initable {
     }
 
     if (finishedMessages.length > 0) {
-      this.store.doneMessages.update((buf) => [...buf, ...finishedMessages])
-      this.store.messageBuffer.update(restMessages)
+      this.stages.justFinished.update((buf) => [...buf, ...finishedMessages])
+      this.stages.processing.update(restMessages)
     }
   }
 
-  private async onDoneMessagesChange(
+  private async onJustFinishedMessagesChange(
     messages: MessageWithMetadata[]
   ): Promise<void> {
     if (!messages.length) {
       return
     }
 
-    await this.asyncLock.withLock(async (): Promise<void> => {
+    await this.locks.justFinished.withLock(async (): Promise<void> => {
       await this.chatMessageModel.insert(messages.map((item) => item.msg))
 
-      this.store.historyMessages.update((buf) => [
+      this.stages.history.update((buf) => [
         ...buf,
         ...messages.filter((msg) => !isEmptyMessage(msg.msg)),
       ])
-      this.store.doneMessages.update([])
+      this.stages.justFinished.update([])
     })
   }
 }

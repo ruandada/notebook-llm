@@ -1,9 +1,14 @@
 import { lockId } from '../idgenerator'
 
+export interface AsyncLock {
+  lock: () => Promise<() => void>
+  withLock: <T>(fn: () => Promise<T>, throwError?: boolean) => Promise<T>
+}
+
 export const createAsyncLock = (
   queueLimit?: number,
   priority: 'earliest' | 'latest' = 'earliest'
-) => {
+): AsyncLock => {
   const queue: { resolve: () => void; reject: (reason?: any) => void }[] = []
   let locked = ''
 
