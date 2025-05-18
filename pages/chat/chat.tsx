@@ -14,15 +14,19 @@ import { useMessageController } from '@/core/chat'
 import { buildTextMessage } from '@/dao/chat-message.type'
 import { MessageView } from './views'
 
-export const ChatTest: React.FC = memo(() => {
+export interface ChatViewProps {
+  chatId: string
+}
+
+export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
   const headerHeight = useHeaderHeight()
   const insects = useSafeAreaInsets()
   const [input, setInput] = useState('')
 
-  const { controller, chatMessages } = useMessageController('default')
+  const { controller, chatMessages } = useMessageController(chatId)
 
   const onSend = useCallback(() => {
-    controller.appendUserMessage(buildTextMessage('default', input, 'user'))
+    controller.appendUserMessage(buildTextMessage(chatId, input, 'user'))
     setInput('')
   }, [input])
 
@@ -30,7 +34,6 @@ export const ChatTest: React.FC = memo(() => {
     <>
       <KeyboardAvoidingView behavior="padding">
         <FlatList
-          style={{ paddingTop: headerHeight }}
           data={chatMessages}
           keyExtractor={(item) => item.msg.id}
           renderItem={({ item }) => (

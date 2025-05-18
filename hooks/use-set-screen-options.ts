@@ -2,7 +2,7 @@ import type { NativeStackNavigationOptions } from '@react-navigation/native-stac
 import { useNavigation } from 'expo-router'
 import { useEffect } from 'react'
 
-export const useSetScreenOptions = (opt: NativeStackNavigationOptions) => {
+export const useScreenOptions = (opt: NativeStackNavigationOptions) => {
   let navigation = useNavigation()
 
   useEffect(() => {

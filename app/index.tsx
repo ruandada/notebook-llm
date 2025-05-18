@@ -1,5 +1,5 @@
 import React, { memo } from 'react'
 
-import { ChatTest } from '@/pages/chat-test'
+import { Redirect } from 'expo-router'
 
-export default memo(() => <ChatTest />)
+export default memo(() => <Redirect href="/chat" />)

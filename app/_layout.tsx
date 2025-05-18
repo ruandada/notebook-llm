@@ -1,8 +1,8 @@
 import 'react-native-get-random-values'
 
-import { Stack } from 'expo-router'
+import { Slot } from 'expo-router'
 import * as SplashScreen from 'expo-splash-screen'
-import { useEffect } from 'react'
+import React, { memo, useEffect } from 'react'
 import 'react-native-reanimated'
 
 import '@/core/i18n'
@@ -11,7 +11,6 @@ import { useTranslation } from 'react-i18next'
 import { useAppInit } from '@/hooks/use-app-init'
 import { Alert, BackHandler } from 'react-native'
 import { ThemeProvider } from '@/components/theme-provider'
-import { BlurView } from 'expo-blur'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -20,7 +19,7 @@ export {
 
 export const unstable_settings = {
   // Ensure that reloading on `/modal` keeps a back button present.
-  initialRouteName: '(tabs)',
+  initialRouteName: '(home)',
 }
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
@@ -48,26 +47,13 @@ export default function RootLayout() {
     return null
   }
 
-  return <RootLayoutNav />
+  return <AppLayout />
 }
 
-function RootLayoutNav() {
-  const { t } = useTranslation()
+const AppLayout: React.FC = memo(() => {
   return (
     <ThemeProvider>
-      <Stack>
-        <Stack.Screen
-          name="index"
-          options={{
-            title: 'Chat Test',
-            headerTitle: () => null,
-            headerTransparent: true,
-            headerBackground: () => (
-              <BlurView intensity={100} className="w-full h-full"></BlurView>
-            ),
-          }}
-        />
-      </Stack>
+      <Slot />
     </ThemeProvider>
   )
-}
+})

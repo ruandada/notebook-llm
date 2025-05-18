@@ -12,7 +12,7 @@ export default function NotFoundScreen() {
           This screen doesn't exist.
         </Text>
 
-        <Link href="/" style={styles.link}>
+        <Link href="/chat" style={styles.link}>
           <Text className="text-label" style={styles.linkText}>
             Go to home screen!
           </Text>

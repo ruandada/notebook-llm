@@ -52,7 +52,7 @@ export class ChatMessageModel implements Initable {
         chatId,
       ])
     )
-    return result.map((item) => this.unserialize(item))
+    return result.map((item) => this.deserialize(item))
   }
 
   async insert(messages: ChatMessage[]): Promise<void> {
@@ -78,7 +78,7 @@ export class ChatMessageModel implements Initable {
     }
   }
 
-  protected unserialize(row: Record<string, any>): ChatMessage {
+  protected deserialize(row: Record<string, any>): ChatMessage {
     const msg: ChatMessage = {
       id: row.id,
       time: new Date(row.time),
