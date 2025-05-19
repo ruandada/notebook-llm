@@ -49,6 +49,15 @@ export class ChatModel implements Initable {
     return res.map((row) => ChatModel.deserialize(row))
   }
 
+  async getChatById(id: string): Promise<Chat> {
+    const stmt = sql(`SELECT * FROM "chat" WHERE "id" = ?`, [id])
+    const res = await this.storage.queryAll<Chat>(stmt)
+    if (!res?.length) {
+      throw new Error(`chat ${id} not found`)
+    }
+    return ChatModel.deserialize(res[0])
+  }
+
   async updateChatExtra(
     chatId: string,
     extra: Chat['extra']

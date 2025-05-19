@@ -10,5 +10,6 @@
   "request_failure": "Request failure",
   "msg": {
     "non_text": "Non-text message"
-  }
+  },
+  "home": "Home"
 }

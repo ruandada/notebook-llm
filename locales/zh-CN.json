@@ -10,5 +10,6 @@
   "request_failure": "请求失败",
   "msg": {
     "non_text": "非文本消息"
-  }
+  },
+  "home": "主页"
 }

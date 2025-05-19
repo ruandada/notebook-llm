@@ -3,7 +3,7 @@ import { PrettyScrollView } from '@/components/pretty-scroll-view'
 import { useInstance } from '@/core/di'
 import { ChatCreatedEvent, useEventListener } from '@/core/eventbus'
 import { ChatModel } from '@/dao/chat'
-import { Chat } from '@/dao/chat.type'
+import { Chat, getChatTitle } from '@/dao/chat.type'
 import { useRequest } from '@/hooks/use-request'
 import dayjs from 'dayjs'
 import { useRouter } from 'expo-router'
@@ -78,7 +78,7 @@ export const ChatListView: React.FC = memo(() => {
                   onPress={() => router.push(`/chat/${item.id}`)}
                 >
                   <View className="flex-row justify-between">
-                    <View className="flex-row items-center gap-4">
+                    <View className="flex-row items-center gap-4 shrink">
                       <Avatar
                         fallback={
                           <Entypo
@@ -88,11 +88,9 @@ export const ChatListView: React.FC = memo(() => {
                           />
                         }
                       />
-                      <View className="flex-col gap-2 max-w-[67%]">
+                      <View className="flex-col gap-2">
                         <Text className="text-label text-xl">
-                          {item.useDefaultTitle
-                            ? t('chat.default_title')
-                            : item.title || t('chat.no_title')}
+                          {getChatTitle(item)}
                         </Text>
 
                         <Text
