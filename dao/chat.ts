@@ -1,10 +1,9 @@
 import { Injectable, Require } from '@/core/di'
 import { inserts, ModelStorage, sql } from './base'
 import { Initable } from '@/core/initable'
-import { ChatMessage } from './chat-message.type'
 import { Chat } from './chat.type'
 import { chatId } from '@/core/idgenerator'
-import { Alert } from 'react-native'
+import { SQLiteRunResult } from 'expo-sqlite'
 
 @Injectable()
 @Require(ModelStorage)
@@ -13,7 +12,7 @@ export class ChatModel implements Initable {
 
   async init(): Promise<void> {
     await this.storage.execute(`
-      CREATE TABLE "chat" (
+      CREATE TABLE IF NOT EXISTS "chat" (
         "id" text(255) NOT NULL,
         "title" text(255) NOT NULL,
         "create_time" integer NOT NULL,
@@ -22,17 +21,17 @@ export class ChatModel implements Initable {
         PRIMARY KEY ("id")
       );
 
-      CREATE INDEX "idx_create_time"
+      CREATE INDEX IF NOT EXISTS "idx_create_time"
       ON "chat" (
         "create_time" DESC
       );
 
-      CREATE INDEX "idx_title"
+      CREATE INDEX IF NOT EXISTS "idx_title"
       ON "chat" (
         "title" ASC
       );
 
-      CREATE INDEX "idx_use_default_title"
+      CREATE INDEX IF NOT EXISTS "idx_use_default_title"
       ON "chat" (
         "use_default_title" ASC
       );
@@ -46,7 +45,20 @@ export class ChatModel implements Initable {
       `SELECT * FROM "chat" ORDER BY "create_time" DESC LIMIT ? OFFSET ?`,
       [limit, offset]
     )
-    return this.storage.queryAll<Chat>(stmt)
+    const res = await this.storage.queryAll<Chat>(stmt)
+    return res.map((row) => ChatModel.deserialize(row))
+  }
+
+  async updateChatExtra(
+    chatId: string,
+    extra: Chat['extra']
+  ): Promise<SQLiteRunResult> {
+    return this.storage.run(
+      sql('UPDATE "chat" SET "extra" = ? WHERE "id" = ?', [
+        JSON.stringify(extra),
+        chatId,
+      ])
+    )
   }
 
   async creteEmptyChat(): Promise<Chat> {
@@ -57,11 +69,11 @@ export class ChatModel implements Initable {
       useDefaultTitle: true,
       extra: {},
     }
-    await this.storage.run(inserts('chat', [this.serialize(chat)]))
+    await this.storage.run(inserts('chat', [ChatModel.serialize(chat)]))
     return chat
   }
 
-  protected serialize(row: Chat): Record<string, any> {
+  public static serialize(row: Chat): Record<string, any> {
     return {
       id: row.id,
       title: row.title,
@@ -71,13 +83,13 @@ export class ChatModel implements Initable {
     }
   }
 
-  protected deserialize(row: Record<string, any>): Chat {
+  public static deserialize(row: Record<string, any>): Chat {
     const chat: Chat = {
       id: row.id,
       createTime: new Date(row.create_time),
       title: row.title ?? '',
       useDefaultTitle: !!row.use_default_title,
-      extra: null!,
+      extra: row.extra ?? '{}',
     }
 
     try {

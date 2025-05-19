@@ -1,11 +1,14 @@
 {
   "my_sth": "我的{{name}}",
-  "agent": "智能体",
-  "me": "我",
-  "new_sth": "新建{{name}}",
-  "home": "主页",
-  "cancel": "取消",
-  "error": "错误",
-  "name": "名称",
-  "search": "搜索"
+  "chat": {
+    "list": "对话",
+    "default_title": "新对话",
+    "no_title": "未命名对话",
+    "default_description": "创建了新对话"
+  },
+  "settings": "设置",
+  "request_failure": "请求失败",
+  "msg": {
+    "non_text": "非文本消息"
+  }
 }

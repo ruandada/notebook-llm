@@ -1,11 +1,14 @@
 {
   "my_sth": "My {{name}}",
-  "agent": "Agent",
-  "me": "Me",
-  "new_sth": "New {{name}}",
-  "home": "Home",
-  "cancel": "Cancel",
-  "error": "Error",
-  "name": "Name",
-  "search": "Search"
+  "chat": {
+    "list": "Chat",
+    "default_title": "New chat",
+    "no_title": "Unamed chat",
+    "default_description": "Created a new conversation"
+  },
+  "settings": "Settings",
+  "request_failure": "Request failure",
+  "msg": {
+    "non_text": "Non-text message"
+  }
 }

@@ -1,8 +1,14 @@
 import { Stack } from 'expo-router'
-import React from 'react'
+import React, { memo } from 'react'
 
-const HomeLayout: React.FC = () => {
-  return <Stack />
-}
+const HomeLayout: React.FC = memo(() => {
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+      }}
+    />
+  )
+})
 
 export default HomeLayout

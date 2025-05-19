@@ -14,8 +14,10 @@ Injector.$rootInjector.registerProvider(
   factoryProvider<OpenAIContext>(
     symbol,
     (config: ConfigStore): OpenAIContext => {
-      const { models, active_model } = config.getValue()
-      const model = models[active_model]
+      const {
+        openai: { providers, default_provider: defaultProvider },
+      } = config.getValue()
+      const provider = providers[defaultProvider]
 
       const compatibleFetch = (
         url: RequestInfo,
@@ -35,10 +37,10 @@ Injector.$rootInjector.registerProvider(
         )
       }
 
-      const openai = model
+      const openai = provider
         ? new OpenAI({
-            baseURL: model.base_url,
-            apiKey: model.api_key,
+            baseURL: provider.base_url,
+            apiKey: provider.api_key,
             fetch: compatibleFetch,
           })
         : new OpenAI({
@@ -47,7 +49,7 @@ Injector.$rootInjector.registerProvider(
 
       return {
         openai,
-        defaultModel: model.default_model,
+        defaultModel: provider.default_model,
       }
     },
     [ConfigStore]

@@ -1,4 +1,5 @@
 import { messageId } from '@/core/idgenerator'
+import i18n from '@/core/i18n'
 
 export interface ToolCallData {
   title: string
@@ -122,4 +123,19 @@ export const isEmptyMessage = (message: ChatMessage): boolean => {
     : isErrorMessage(message)
     ? !message.content.message
     : false
+}
+
+export const getMessageTextContent = (message: ChatMessage): string => {
+  let text = ''
+  if (isTextMessage(message)) {
+    text = message.content.text
+  } else if (isStreamTextMessage(message)) {
+    text = message.content.buffer.join('')
+  } else if (isErrorMessage(message)) {
+    text = message.content.message
+  } else {
+    text = `[${i18n.t('msg.non_text')}]`
+  }
+
+  return text
 }

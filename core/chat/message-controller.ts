@@ -3,13 +3,18 @@ import { Initable } from '@/core/initable'
 import { Store } from '@/core/store'
 import { createMemoryStore } from '@/core/store'
 import { ChatMessageModel } from '@/dao/chat-message'
-import { ChatMessage, isEmptyMessage } from '@/dao/chat-message.type'
+import {
+  ChatMessage,
+  getMessageTextContent,
+  isEmptyMessage,
+} from '@/dao/chat-message.type'
 import { AsyncMessageBuilder, MessageWithMetadata } from './abstract'
 import { assistantMessageBuilder } from './assistant-message-builder'
 import { createAsyncLock } from '@/core/utils'
 import { ToolController } from './tool-controller'
 import { getBuiltinTools } from './tool-builtin'
 import { AsyncLock } from '../utils/schedule'
+import { ChatModel } from '@/dao/chat'
 
 export class MessageController implements Initable {
   protected readonly stages: {
@@ -26,6 +31,7 @@ export class MessageController implements Initable {
 
   constructor(
     protected readonly chatId: string,
+    protected readonly chatModel: ChatModel,
     protected readonly chatMessageModel: ChatMessageModel,
     protected readonly openai: OpenAIContext
   ) {
@@ -161,7 +167,18 @@ export class MessageController implements Initable {
     }
 
     await this.locks.justFinished.withLock(async (): Promise<void> => {
-      await this.chatMessageModel.insert(messages.map((item) => item.msg))
+      const lastMessage = messages[messages.length - 1]
+
+      await Promise.all([
+        this.chatMessageModel.insert(messages.map((item) => item.msg)),
+        this.chatModel.updateChatExtra(this.chatId, {
+          last_message_role: lastMessage.msg.role,
+          last_message_text: getMessageTextContent(lastMessage.msg).substring(
+            0,
+            100
+          ),
+        }),
+      ])
 
       this.stages.history.update((buf) => [
         ...buf,

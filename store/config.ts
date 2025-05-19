@@ -2,13 +2,19 @@ import { Injectable } from '@/core/di'
 import { createFileSystemStorageProvider, Store } from '@/core/store'
 
 export interface AppConfig {
-  models: Array<{
-    name: string
-    api_key: string
-    base_url: string
-    default_model: string
-  }>
-  active_model: number
+  user: {
+    username: string
+    nickname: string
+  }
+  openai: {
+    providers: Array<{
+      name: string
+      api_key: string
+      base_url: string
+      default_model: string
+    }>
+    default_provider: number
+  }
 }
 
 @Injectable()
@@ -20,15 +26,21 @@ export class ConfigStore extends Store<AppConfig> {
         filePath: 'app_config.yaml',
       }),
       () => ({
-        models: [
-          {
-            name: 'dashscope',
-            api_key: 'sk-063eb8f1927c4bb4bd890b6cc4712770',
-            base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-            default_model: 'qwen-turbo',
-          },
-        ],
-        active_model: 0,
+        user: {
+          username: 'root',
+          nickname: 'Admin',
+        },
+        openai: {
+          providers: [
+            {
+              name: 'dashscope',
+              api_key: process.env.EXPO_PUBLIC_OPENAI_API_KEY ?? '',
+              base_url: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+              default_model: 'qwen-turbo',
+            },
+          ],
+          default_provider: 0,
+        },
       })
     )
   }

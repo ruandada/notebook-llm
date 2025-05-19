@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { Alert } from 'react-native'
 
 export interface RequestOptions<Req extends any[], Res> {
+  toastError?: boolean
   defaultData?: () => Awaited<Res>
   runner: (...req: Req) => Res | Promise<Awaited<Res>>
   onSuccess?: (data: Awaited<Res>, ...request: Req) => void
@@ -25,6 +28,7 @@ export function useRequest<Req extends any[], Res>(
   const [data, setData] = useState<Awaited<Res> | null>(
     opt.defaultData ? opt.defaultData() : null
   )
+  const { t } = useTranslation()
 
   const run = useCallback<RequestContext<Req, Res>['run']>(
     async (...request: Req): Promise<Awaited<Res>> => {
@@ -43,12 +47,21 @@ export function useRequest<Req extends any[], Res>(
       } catch (err) {
         setError(err as Error)
         opt.onError?.(err as Error, ...request)
+        if (opt.toastError !== false) {
+          Alert.alert(t('request_failure'), (err as Error).message)
+        }
         throw err
       } finally {
         setLoading(false)
       }
     },
-    deps ?? [opt.onBeforeRequest, opt.onError, opt.onSuccess, opt.runner]
+    deps ?? [
+      opt?.toastError !== false,
+      opt.onBeforeRequest,
+      opt.onError,
+      opt.onSuccess,
+      opt.runner,
+    ]
   )
 
   return {

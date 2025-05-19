@@ -52,19 +52,19 @@ export class ChatMessageModel implements Initable {
         chatId,
       ])
     )
-    return result.map((item) => this.deserialize(item))
+    return result.map((item) => ChatMessageModel.deserialize(item))
   }
 
   async insert(messages: ChatMessage[]): Promise<void> {
     await this.storage.run(
       inserts(
         'chat_message',
-        messages.map((msg) => this.serialize(msg))
+        messages.map((msg) => ChatMessageModel.serialize(msg))
       )
     )
   }
 
-  protected serialize(row: ChatMessage): Record<string, any> {
+  public static serialize(row: ChatMessage): Record<string, any> {
     return {
       id: row.id,
       time: row.time.valueOf(),
@@ -78,7 +78,7 @@ export class ChatMessageModel implements Initable {
     }
   }
 
-  protected deserialize(row: Record<string, any>): ChatMessage {
+  public static deserialize(row: Record<string, any>): ChatMessage {
     const msg: ChatMessage = {
       id: row.id,
       time: new Date(row.time),

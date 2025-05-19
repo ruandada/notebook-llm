@@ -8,6 +8,7 @@ const ChatViewScreen: React.FC = memo(() => {
 
   useScreenOptions({
     title: '对话详情',
+    headerShown: true,
   })
 
   return <ChatView chatId={id as string} />
