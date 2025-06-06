@@ -1,0 +1,16 @@
+{
+  "my_sth": "My {{name}}",
+  "chat": {
+    "list": "Chat",
+    "default_title": "New chat",
+    "no_title": "Unamed chat",
+    "default_description": "Created a new conversation",
+    "user_message_placeholder": "Type your message here..."
+  },
+  "settings": "Settings",
+  "request_failure": "Request failure",
+  "msg": {
+    "non_text": "Non-text message"
+  },
+  "home": "Home"
+}

@@ -1,0 +1,16 @@
+{
+  "my_sth": "我的{{name}}",
+  "chat": {
+    "list": "对话",
+    "default_title": "新对话",
+    "no_title": "未命名对话",
+    "default_description": "创建了新对话",
+    "user_message_placeholder": "在此输入你的消息"
+  },
+  "settings": "设置",
+  "request_failure": "请求失败",
+  "msg": {
+    "non_text": "非文本消息"
+  },
+  "home": "主页"
+}
