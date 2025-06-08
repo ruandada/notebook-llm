@@ -74,7 +74,7 @@ export const ChatListView: React.FC = memo(() => {
               renderItem={({ item }) => (
                 <Pressable
                   key={item.id}
-                  className="active:bg-cardHoverBackground mb-2 p-4"
+                  className="active:bg-cardSecondaryBackground mb-2 p-4"
                   onPress={() => router.push(`/chat/${item.id}`)}
                 >
                   <View className="flex-row justify-between">

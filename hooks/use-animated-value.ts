@@ -10,10 +10,10 @@ import {
 
 export const withDefaultTiming = <T extends AnimatableValue = number>(v: T) =>
   withSpring(v, {
-    damping: 500,
-    stiffness: 1000,
-    mass: 3,
-    velocity: 0,
+    damping: 60,
+    stiffness: 300,
+    mass: 0.8,
+    velocity: 5,
   })
 
 export const useAnimatedValue = <T extends AnimatableValue = number>(

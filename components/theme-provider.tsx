@@ -38,6 +38,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = memo(
         } else if (color[scheme]) {
           palette[colorName] = color[scheme]
         }
+        if (color.light) {
+          palette[`${colorName}-light`] = color.light
+        }
+        if (color.dark) {
+          palette[`${colorName}-dark`] = color.dark
+        }
       })
       return palette
     }, [scheme])

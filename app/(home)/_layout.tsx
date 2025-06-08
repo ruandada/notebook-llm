@@ -1,6 +1,7 @@
 import { Stack } from 'expo-router'
 import React, { memo } from 'react'
 import { useTranslation } from 'react-i18next'
+import { View } from 'react-native'
 
 const HomeLayout: React.FC = memo(() => {
   const { t } = useTranslation()
@@ -16,6 +17,9 @@ const HomeLayout: React.FC = memo(() => {
         options={{
           title: '',
           headerShown: true,
+          headerBackground: () => (
+            <View className="w-full h-full bg-secondaryBackground" />
+          ),
         }}
       />
     </Stack>

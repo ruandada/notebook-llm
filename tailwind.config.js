@@ -16,19 +16,32 @@ const createThemeColorPalette = () => {
       return undefined
     }
 
-    return platformSelect({
-      ...(color.ios ? { ios: platformColor(color.ios) } : {}),
-      ...(color.android ? { android: platformColor(color.android) } : {}),
-      default: `var(--theme-color-${colorName})`,
-    })
+    return {
+      [colorName]: platformSelect({
+        ...(color.ios ? { ios: platformColor(color.ios) } : {}),
+        ...(color.android ? { android: platformColor(color.android) } : {}),
+        default: `var(--theme-color-${colorName})`,
+      }),
+
+      ...(color.light
+        ? {
+            [`${colorName}-light`]: color.light,
+          }
+        : {}),
+
+      ...(color.dark
+        ? {
+            [`${colorName}-dark`]: color.dark,
+          }
+        : {}),
+    }
   }
 
   return Object.keys(theme.colors).reduce((acc, colorName) => {
-    const color = map(colorName)
-    if (color) {
-      acc[colorName] = color
+    return {
+      ...acc,
+      ...map(colorName),
     }
-    return acc
   }, {})
 }
 

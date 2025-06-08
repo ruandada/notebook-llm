@@ -14,6 +14,7 @@ import {
   KeyboardAvoidingView,
   Button,
   FlatList,
+  Pressable,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
@@ -28,8 +29,9 @@ import { getChatTitle } from '@/dao/chat.type'
 import { useKeyboardHeight } from '@/hooks/use-keyboard-height'
 import Animated, { withTiming } from 'react-native-reanimated'
 import { useAnimatedValue } from '@/hooks/use-animated-value'
-import { BlurView } from 'expo-blur'
+import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
+import clsx from 'clsx'
 
 export interface ChatViewProps {
   chatId: string
@@ -43,7 +45,9 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
   const { controller, chatMessages } = useMessageController(chatId)
   const chatModel = useInstance(ChatModel)
   const keyboardHeight = useKeyboardHeight()
-  const animatedKeyboardHeight = useAnimatedValue(keyboardHeight)
+  const animatedKeyboardHeight = useAnimatedValue(
+    keyboardHeight + (keyboardHeight > 0 ? -insects.bottom : 0)
+  )
 
   const onSend = useCallback(() => {
     controller.appendUserMessage(buildTextMessage(chatId, input, 'user'))
@@ -74,7 +78,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
 
   return (
     <>
-      <View className="h-[100vh]">
+      <View className="h-[100vh] bg-secondaryBackground">
         <FlatList
           inverted
           data={revertedMessages}
@@ -98,32 +102,44 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
         ></FlatList>
       </View>
 
-      <View className="absolute bottom-0 left-0 right-0 rounded-tr-2xl rounded-tl-2xl bg-cardHoverBackground/50 overflow-hidden">
-        <BlurView
-          intensity={100}
-          experimentalBlurMethod="dimezisBlurView"
-          className="w-full h-full"
+      <View className="absolute bottom-[-1] left-0 right-0 rounded-3xl overflow-hidden border border-secondaryBorder border-solid">
+        <View
+          className="w-full h-full bg-background"
           style={{
             paddingBottom: insects.bottom,
             paddingLeft: insects.left,
             paddingRight: insects.right,
           }}
         >
-          <View className="m-4 px-4 rounded-lg flex-row gap-4 items-center">
+          <View className="mx-4 my-2 flex-column gap-2 items-stretch">
             <TextInput
               value={input}
               onChangeText={setInput}
               placeholder={t('chat.user_message_placeholder')}
-              className="text-label flex-1 h-12 py-1 leading-[1.16] text-xl"
+              className="text-label h-12 py-1 leading-[1.16] text-xl"
+              onSubmitEditing={onSend}
             />
-            <Button title="Send" disabled={!input} onPress={onSend}></Button>
+            <View className="flex-row gap-2 items-center justify-end pb-1">
+              <Pressable disabled={!input} onPress={onSend}>
+                <View
+                  className={clsx(
+                    'w-10 h-10 bg-tint rounded-full flex items-center justify-center',
+                    {
+                      'opacity-50': !input,
+                    }
+                  )}
+                >
+                  <FontAwesome name="send" size={18} color="white" />
+                </View>
+              </Pressable>
+            </View>
           </View>
-        </BlurView>
-        <Animated.View
-          style={{
-            height: animatedKeyboardHeight,
-          }}
-        ></Animated.View>
+          <Animated.View
+            style={{
+              height: animatedKeyboardHeight,
+            }}
+          ></Animated.View>
+        </View>
       </View>
     </>
   )

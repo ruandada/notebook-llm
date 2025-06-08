@@ -20,7 +20,7 @@ colors:
 
   background:
     light: '#FFFFFF'
-    dark: '#000000'
+    dark: '#121212'
     # light: '#FFFFFF'
     # dark: '#000000'
     # ios: systemBackground
@@ -41,9 +41,9 @@ colors:
     light: '#FFFFFF'
     dark: '#121212'
 
-  cardHoverBackground:
-    light: '#F2F2F2'
-    dark: '#161616'
+  secondaryCardBackground:
+    light: '#F5F5F5'
+    dark: '#2A2A2A'
 
   border:
     light: '#EBEBEB'
@@ -52,12 +52,24 @@ colors:
     # dark: '#38383A'
     # ios: separator
 
+  secondaryBorder:
+    light: '#E0E0E0'
+    dark: '#2f2f2f'
+
   tint:
-    light: '#18181b'
-    dark: '#FAFAFA'
+    light: '#8e51ff'
+    dark: '#8e51ff'
     # light: '#007AFF'
     # dark: '#0A84FF'
     # ios: systemBlue
+
+  secondaryTint:
+    light: '#423f3d'
+    dark: '#ffffff'
+
+  tertiaryTint:
+    light: '#423f3d'
+    dark: '#ffffff'
 
   link:
     light: '#007AFF'

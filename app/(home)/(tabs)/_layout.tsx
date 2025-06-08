@@ -6,12 +6,12 @@ import { PlatformPressable } from '@react-navigation/elements'
 import { Tabs, useRouter } from 'expo-router'
 import React, { memo, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
-import { View } from 'react-native'
+import { View, Text } from 'react-native'
 
 // You can explore the built-in icon families and icons on the web at https://icons.expo.fyi/
 const TabsLayout: React.FC = memo(() => {
   const { t } = useTranslation()
-  const backgroundColor = useThemeColor('background')
+  const labelColorDark = useThemeColor('label-dark')
 
   const router = useRouter()
 
@@ -26,6 +26,7 @@ const TabsLayout: React.FC = memo(() => {
     <Tabs
       screenOptions={{
         headerShown: false,
+        tabBarActiveTintColor: useThemeColor('secondaryTint') as string,
         tabBarStyle: {
           flexDirection: 'row',
         },
@@ -34,7 +35,7 @@ const TabsLayout: React.FC = memo(() => {
             <View className="flex-row items-center justify-center h-full">
               <PlatformPressable onPress={handleClickCenterButton}>
                 <View className="flex-row items-center justify-center bg-tint w-16 h-10 rounded-md">
-                  <Entypo name="plus" size={24} color={backgroundColor} />
+                  <Entypo name="plus" size={24} color={labelColorDark} />
                 </View>
               </PlatformPressable>
             </View>
