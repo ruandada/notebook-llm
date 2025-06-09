@@ -1,20 +1,11 @@
-import { useHeaderHeight } from '@react-navigation/elements'
-import React, {
-  memo,
-  useCallback,
-  useEffect,
-  useState,
-  useRef,
-  useMemo,
-} from 'react'
+import React, { memo, useCallback, useEffect, useState, useMemo } from 'react'
 import {
   View,
   Text,
   TextInput,
-  KeyboardAvoidingView,
-  Button,
   FlatList,
   Pressable,
+  Keyboard,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
@@ -76,6 +67,45 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
     return chatMessages.slice().reverse()
   }, [chatMessages])
 
+  // 预计算需要显示时间戳的消息ID和对应的时间戳字符串
+  const timestampMap = useMemo(() => {
+    const map = new Map<string, string>()
+    let lastTimestampTime: dayjs.Dayjs | null = null
+
+    if (chatMessages.length > 0) {
+      // 始终显示第一条消息的时间戳
+      map.set(chatMessages[0].msg.id, dayjs(chatMessages[0].msg.time).fromNow())
+      lastTimestampTime = dayjs(chatMessages[0].msg.time)
+
+      // 检查其他消息
+      for (let i = 1; i < chatMessages.length; i++) {
+        const currentTime = dayjs(chatMessages[i].msg.time)
+
+        // 如果与上一个显示时间戳的消息时间差超过30分钟，显示时间戳
+        if (
+          lastTimestampTime &&
+          currentTime.diff(lastTimestampTime, 'minute') >= 30
+        ) {
+          map.set(
+            chatMessages[i].msg.id,
+            dayjs(chatMessages[i].msg.time).fromNow()
+          )
+          lastTimestampTime = currentTime
+        }
+      }
+    }
+
+    return map
+  }, [chatMessages])
+
+  // 判断是否应该显示时间戳的函数
+  const shouldShowTimestamp = useCallback(
+    (messageId: string) => {
+      return timestampMap.has(messageId)
+    },
+    [timestampMap]
+  )
+
   return (
     <>
       <View className="h-[100vh] bg-secondaryBackground">
@@ -83,18 +113,29 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
           inverted
           data={revertedMessages}
           keyExtractor={(item) => item.msg.id}
+          contentContainerStyle={{
+            flexGrow: 1,
+            justifyContent: 'flex-end',
+          }}
+          onScroll={() => {
+            if (Keyboard.isVisible()) {
+              Keyboard.dismiss()
+            }
+          }}
           renderItem={({ item }) => (
-            <View className="p-4">
-              <Text className="text-secondaryLabel">
-                {dayjs(item.msg.time).format('YYYY-MM-DD HH:mm:ss')}
-              </Text>
+            <View className="px-4">
+              {shouldShowTimestamp(item.msg.id) && (
+                <Text className="text-secondaryLabel text-lg text-center py-2">
+                  {timestampMap.get(item.msg.id)}
+                </Text>
+              )}
               <MessageView message={item.msg} status={item.status} />
             </View>
           )}
           ListHeaderComponent={() => (
             <Animated.View
+              className="mb-[30vh]"
               style={{
-                marginBottom: 300,
                 paddingBottom: animatedKeyboardHeight,
               }}
             ></Animated.View>
@@ -102,9 +143,9 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
         ></FlatList>
       </View>
 
-      <View className="absolute bottom-[-1] left-0 right-0 rounded-3xl overflow-hidden border border-secondaryBorder border-solid">
+      <View className="absolute bottom-[-100] pb-[100] left-0 right-0 rounded-3xl shadow-md shadow-black/10 border border-border border-solid bg-background">
         <View
-          className="w-full h-full bg-background"
+          className="w-full h-full"
           style={{
             paddingBottom: insects.bottom,
             paddingLeft: insects.left,
@@ -118,6 +159,9 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
               placeholder={t('chat.user_message_placeholder')}
               className="text-label h-12 py-1 leading-[1.16] text-xl"
               onSubmitEditing={onSend}
+              multiline={false}
+              returnKeyType="send"
+              enablesReturnKeyAutomatically
             />
             <View className="flex-row gap-2 items-center justify-end pb-1">
               <Pressable disabled={!input} onPress={onSend}>

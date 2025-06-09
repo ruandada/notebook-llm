@@ -12,5 +12,6 @@
   "msg": {
     "non_text": "Non-text message"
   },
-  "home": "Home"
+  "home": "Home",
+  "error": "Error"
 }

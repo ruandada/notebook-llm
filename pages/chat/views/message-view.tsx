@@ -6,8 +6,8 @@ import {
   TextMessage,
 } from '@/dao/chat-message.type'
 import React, { memo } from 'react'
-import { Text, View, ViewProps } from 'react-native'
-import { StreamTextMessageView } from './steram-text-message-view'
+import { ScrollView, Text, View, ViewProps } from 'react-native'
+import { StreamTextMessageView } from './stream-text-message-view'
 import { TextMessageView } from './text-message-view'
 import { MessageWithMetadata } from '../../../core/chat'
 
@@ -19,7 +19,7 @@ export interface MessageViewProps extends ViewProps {
 export const MessageView: React.FC<MessageViewProps> = memo(
   ({ children, message, ...restProps }) => {
     return (
-      <>
+      <View className="mb-6">
         {isTextMessage(message) ? (
           <TextMessageView message={message} {...restProps}>
             {children}
@@ -31,16 +31,22 @@ export const MessageView: React.FC<MessageViewProps> = memo(
         ) : null}
 
         {message.extra?.tool_call ? (
-          <View className="p-4 bg-secondaryBackground rounded-lg">
-            <Text className="font-bold mb-4 text-lg">
+          <View className="p-4 bg-cardBackground rounded-xl shadow-lg shadow-black/5 border-border border">
+            <Text className="mb-4 text-lg text-tint">
               {message.extra.tool_call.title}
             </Text>
-            <Text>
-              {JSON.stringify(message.extra.tool_call?.result ?? null)}
-            </Text>
+            <ScrollView className="bg-secondaryBackground p-2 max-h-[100] rounded-xl">
+              <Text className="text-label font-mono tracking-wide leading-6">
+                {JSON.stringify(
+                  message.extra.tool_call?.result ?? null,
+                  null,
+                  2
+                )}
+              </Text>
+            </ScrollView>
           </View>
         ) : null}
-      </>
+      </View>
     )
   }
 )

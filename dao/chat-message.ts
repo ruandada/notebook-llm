@@ -100,7 +100,7 @@ export class ChatMessageModel implements Initable {
     }
 
     try {
-      msg.extra = msg.extra ? JSON.parse(row.extra) : {}
+      msg.extra = row.extra ? JSON.parse(row.extra) : {}
     } catch (e) {
       msg.extra = {}
     }
