@@ -1,4 +1,3 @@
-import { Avatar } from '@/components/avatar'
 import { PrettyScrollView } from '@/components/pretty-scroll-view'
 import { useInstance } from '@/core/di'
 import { ChatCreatedEvent, useEventListener } from '@/core/eventbus'
@@ -10,12 +9,9 @@ import { useRouter } from 'expo-router'
 import React, { memo, useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { FlatList, Pressable, Text, View } from 'react-native'
-import Entypo from '@expo/vector-icons/Entypo'
-import { getColorValue, paletteColor } from '@/core/color'
-import { ChatMessageModel } from '@/dao/chat-message'
-import { getMessageTextContent } from '@/dao/chat-message.type'
 import { useStore } from '@/core/store'
 import { ConfigStore } from '@/store/config'
+import { IconAvatar } from '@/components/icon-avatar'
 
 const PAGE_SIZE = 20
 
@@ -79,14 +75,9 @@ export const ChatListView: React.FC = memo(() => {
                 >
                   <View className="flex-row justify-between">
                     <View className="flex-row items-center gap-4 shrink">
-                      <Avatar
-                        fallback={
-                          <Entypo
-                            name="chat"
-                            size={20}
-                            color={getColorValue(paletteColor('violet', 900))}
-                          />
-                        }
+                      <IconAvatar
+                        icon="ionicons/chatbubble-ellipses-outline"
+                        size={40}
                       />
                       <View className="flex-col gap-2">
                         <Text className="text-label text-xl">

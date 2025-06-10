@@ -2,7 +2,7 @@ import { Color, getColorValue, paletteColor } from '@/core/color'
 import React, { useMemo } from 'react'
 import { Text, View, ViewProps } from 'react-native'
 
-export interface AvatarProps extends ViewProps {
+export interface AvatarProps extends Omit<ViewProps, 'children'> {
   fallback?: string | React.ReactNode
   foregroundColor?: Color
   backgroundColor?: Color
@@ -14,7 +14,6 @@ export const Avatar: React.FC<AvatarProps> = ({
   foregroundColor,
   backgroundColor,
   size = 45,
-  children,
   ...restProps
 }) => {
   const background = useMemo(
@@ -29,7 +28,7 @@ export const Avatar: React.FC<AvatarProps> = ({
   return (
     <View
       {...restProps}
-      className="bg-violet-200 rounded-full flex-row items-center justify-center"
+      className="bg-violet-200 rounded-full flex-row items-center justify-center overflow-hidden"
       style={{
         width: size,
         height: size,

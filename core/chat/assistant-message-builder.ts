@@ -10,19 +10,19 @@ import {
 import type { ChatCompletionMessageParam } from 'openai/resources/index.mjs'
 import type { MessageController } from './message-controller'
 import { produce } from 'immer'
-import { ToolController } from './tool-controller'
+import { AgentDriver } from './agent-driver'
 
 export interface AssistantMessageBuilderOptions {
   context: OpenAIContext
   historyMessages: ChatMessage[]
-  tools: ToolController
+  agent: AgentDriver
   maxRound?: number
 }
 
 export const assistantMessageBuilder = ({
   context,
   historyMessages,
-  tools,
+  agent,
   maxRound = 10,
 }: AssistantMessageBuilderOptions): AsyncMessageBuilder => {
   return {
@@ -33,7 +33,10 @@ export const assistantMessageBuilder = ({
     ): Promise<void> => {
       const { openai } = context
 
-      const openaiMessages: ChatCompletionMessageParam[] = []
+      const openaiMessages: ChatCompletionMessageParam[] = [
+        ...agent.getOpenAISystemPrompts(),
+      ]
+
       historyMessages.forEach((msg) => {
         if (msg.role === 'assistant') {
           if (isTextMessage(msg) && msg.content.text) {
@@ -43,6 +46,7 @@ export const assistantMessageBuilder = ({
             })
           }
 
+          // Push tool call and tool call result messages
           if (msg.extra?.tool_call?.result_status) {
             const {
               tool_call_id: toolCallId,
@@ -72,10 +76,7 @@ export const assistantMessageBuilder = ({
               }
             )
           }
-          return
-        }
-
-        if (isTextMessage(msg) && msg.content.text) {
+        } else if (isTextMessage(msg) && msg.content.text) {
           openaiMessages.push({
             role: msg.role,
             content: msg.content.text,
@@ -83,11 +84,15 @@ export const assistantMessageBuilder = ({
         }
       })
 
+      const { modelOptions } = agent.getOptions()
+      const tools = agent.getOpenAITools()
+
       const stream = await openai.chat.completions.create({
-        model: context.defaultModel,
+        ...modelOptions,
+        model: modelOptions.model ?? context.defaultModel,
         stream: true,
         messages: openaiMessages,
-        tools: tools.getOpenAITools(),
+        ...(tools.length ? { tools } : {}),
       })
 
       for await (const event of stream) {
@@ -117,7 +122,7 @@ export const assistantMessageBuilder = ({
 
           if (toolCall?.function?.name) {
             const toolName = toolCall.function.name
-            const tool = tools.getTool(toolName)
+            const tool = agent.getTool(toolName)
             if (!tool) {
               controller.updateProcessingMessage<StreamTextMessage>(
                 messageId,
@@ -161,8 +166,8 @@ export const assistantMessageBuilder = ({
               })
             )
 
-            tools
-              .run(toolName, parameter)
+            agent
+              .runTool(toolName, parameter)
               .then((result) => {
                 controller.updateProcessingMessage<StreamTextMessage>(
                   messageId,
@@ -204,7 +209,7 @@ export const assistantMessageBuilder = ({
                   assistantMessageBuilder({
                     context,
                     historyMessages: [...historyMessages, currentMessage.msg],
-                    tools,
+                    agent,
                     maxRound: Math.max(maxRound - 1, 0),
                   })
                 )

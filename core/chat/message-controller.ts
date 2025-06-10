@@ -11,10 +11,10 @@ import {
 import { AsyncMessageBuilder, MessageWithMetadata } from './abstract'
 import { assistantMessageBuilder } from './assistant-message-builder'
 import { createAsyncLock } from '@/core/utils'
-import { ToolController } from './tool-controller'
-import { getBuiltinTools } from './tool-builtin'
 import { AsyncLock } from '../utils/schedule'
 import { ChatModel } from '@/dao/chat'
+import { AgentDriver } from './agent-driver'
+import { getDefaultAgent } from '@/dao/agent'
 
 export class MessageController implements Initable {
   protected readonly stages: {
@@ -27,7 +27,7 @@ export class MessageController implements Initable {
     justFinished: AsyncLock
   }
 
-  protected readonly toolController: ToolController
+  protected readonly agent: AgentDriver
 
   constructor(
     protected readonly chatId: string,
@@ -48,13 +48,17 @@ export class MessageController implements Initable {
       this.onProcessingMessagesChange.bind(this),
       this.onJustFinishedMessagesChange.bind(this),
     ]
-    this.toolController = new ToolController(getBuiltinTools())
+    this.agent = new AgentDriver(getDefaultAgent())
   }
 
   public getChatId(): string {
     return this.chatId
   }
 
+  /**
+   * Append a user message to the chat history and start a new assistant message building process automatically
+   * @param msg - The user message to append
+   */
   public async appendUserMessage(msg: ChatMessage) {
     this.stages.processing.update((buf) => [
       ...buf,
@@ -64,18 +68,25 @@ export class MessageController implements Initable {
       },
     ])
 
+    const historyMessages = (this.stages.history.getValue() || [])
+      .map((item) => item.msg)
+      .reverse()
+      .slice(0, this.agent.getOptions().maxLookupHistory)
+      .reverse()
+
     const builder = assistantMessageBuilder({
       context: this.openai,
-      historyMessages: [
-        ...(this.stages.history.getValue() || []).map((item) => item.msg),
-        msg,
-      ],
-      tools: this.toolController,
+      agent: this.agent,
+      historyMessages: [...historyMessages, msg],
     })
 
     this.applyMessageBuilder(builder)
   }
 
+  /**
+   * Apply a message builder to the chat history
+   * @param builder - The message builder to apply
+   */
   public applyMessageBuilder(builder: AsyncMessageBuilder): void {
     const msg = builder.create(this.chatId)
     this.stages.processing.update((buf) => [

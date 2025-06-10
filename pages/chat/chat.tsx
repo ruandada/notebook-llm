@@ -23,6 +23,7 @@ import { useAnimatedValue } from '@/hooks/use-animated-value'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
+import { IconAvatar } from '@/components/icon-avatar'
 
 export interface ChatViewProps {
   chatId: string
@@ -63,10 +64,6 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
     [chat]
   )
 
-  const revertedMessages = useMemo(() => {
-    return chatMessages.slice().reverse()
-  }, [chatMessages])
-
   // 预计算需要显示时间戳的消息ID和对应的时间戳字符串
   const timestampMap = useMemo(() => {
     const map = new Map<string, string>()
@@ -98,6 +95,10 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
     return map
   }, [chatMessages])
 
+  const invertedMessages = useMemo(() => {
+    return chatMessages.slice().reverse()
+  }, [chatMessages])
+
   // 判断是否应该显示时间戳的函数
   const shouldShowTimestamp = useCallback(
     (messageId: string) => {
@@ -111,7 +112,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
       <View className="h-[100vh] bg-secondaryBackground">
         <FlatList
           inverted
-          data={revertedMessages}
+          data={invertedMessages}
           keyExtractor={(item) => item.msg.id}
           contentContainerStyle={{
             flexGrow: 1,
@@ -123,14 +124,26 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
             }
           }}
           renderItem={({ item }) => (
-            <View className="px-4">
+            <>
               {shouldShowTimestamp(item.msg.id) && (
-                <Text className="text-secondaryLabel text-lg text-center py-2">
+                <Text className="text-secondaryLabel text-lg text-center my-4">
                   {timestampMap.get(item.msg.id)}
                 </Text>
               )}
-              <MessageView message={item.msg} status={item.status} />
-            </View>
+              <View className="px-4 flex flex-row items-start gap-4">
+                {item.msg.role === 'assistant' ? (
+                  <View className="mt-1">
+                    <IconAvatar
+                      icon="materialcommunityicons/face-agent"
+                      size={32}
+                    />
+                  </View>
+                ) : null}
+                <View className="flex-1">
+                  <MessageView message={item.msg} status={item.status} />
+                </View>
+              </View>
+            </>
           )}
           ListHeaderComponent={() => (
             <Animated.View

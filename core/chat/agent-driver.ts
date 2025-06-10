@@ -1,37 +1,42 @@
+import { Agent } from '@/dao/agent'
 import { HttpTool, isBuiltinTool, isHttpTool, Tool } from '@/dao/tool.type'
 import { Ajv, ValidateFunction } from 'ajv'
 
 import { fetch } from 'expo/fetch'
-import type { ChatCompletionTool } from 'openai/resources/index.mjs'
+import type {
+  ChatCompletionMessageParam,
+  ChatCompletionTool,
+} from 'openai/resources/index.mjs'
+import { getBuiltinTools } from './tool-builtin'
 
-export class ToolController {
+export class AgentDriver {
   protected readonly ajv: Ajv
+  protected readonly agent: Agent
 
   protected readonly store: Map<string, Tool>
   protected validatorCache: Record<string, ValidateFunction<any>>
 
-  constructor(tools: Tool[]) {
+  constructor(agent: Agent) {
     this.ajv = new Ajv()
     this.store = new Map()
+    this.agent = agent
     this.validatorCache = {}
-    tools.forEach((tool) => {
-      this.register(tool)
+
+    if (agent.useBuiltinTools) {
+      getBuiltinTools().forEach((tool) => {
+        this.store.set(tool.name, tool)
+      })
+    }
+    agent.tools.forEach((tool) => {
+      if (this.store.has(tool.name)) {
+        throw new Error(`tool ${tool.name} has been registered`)
+      }
+      this.store.set(tool.name, tool)
     })
   }
 
-  public register(tool: Tool): void {
-    if (this.store.has(tool.name)) {
-      throw new Error(`tool ${tool.name} has been registered`)
-    }
-    this.store.set(tool.name, tool)
-  }
-
-  public unregister(toolName: string): boolean {
-    return this.store.delete(toolName)
-  }
-
-  public getTool(toolName: string): Tool | undefined {
-    return this.store.get(toolName)
+  public getOptions(): Readonly<Agent> {
+    return this.agent
   }
 
   public getOpenAITools(): ChatCompletionTool[] {
@@ -47,7 +52,22 @@ export class ToolController {
     })
   }
 
-  public async run(toolName: string, parameter: string): Promise<any> {
+  public getOpenAISystemPrompts() {
+    return this.agent.systemPrompts.map(
+      (prompt): ChatCompletionMessageParam => {
+        return {
+          role: 'system',
+          content: prompt,
+        }
+      }
+    )
+  }
+
+  public getTool(toolName: string): Tool | undefined {
+    return this.store.get(toolName)
+  }
+
+  public async runTool(toolName: string, parameter: string): Promise<any> {
     const tool = this.store.get(toolName)
     if (!tool) {
       throw new Error(`tool ${toolName} has not been registered`)
