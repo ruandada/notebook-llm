@@ -22,7 +22,7 @@ export const useAppInit = (): AppInitResult => {
   const [initableLoaded, initableError] = useInitableInit(
     compose(
       'sequence',
-      // useInstance(FileSystemCleaner),
+      useInstance(FileSystemCleaner),
       compose(
         'parallel',
         useInstance(ConfigStore),

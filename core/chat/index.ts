@@ -1,6 +1,6 @@
 import { useFactoryRef } from '@/hooks/use-factroy-ref'
 import { MessageController } from './message-controller'
-import { useInjector, useInstance } from '@/core/di'
+import { useInstance } from '@/core/di'
 import { useInitableInit } from '@/core/initable'
 import { useStore } from '@/core/store'
 import { useMemo } from 'react'
@@ -29,9 +29,9 @@ export const useMessageController = (chatId: string) => {
     controller,
     chatMessages: useMemo(
       () => [
-        ...historyMessages,
-        ...justFinishedMessages,
         ...processingMessages,
+        ...justFinishedMessages,
+        ...historyMessages,
       ],
       [historyMessages, justFinishedMessages, processingMessages]
     ),

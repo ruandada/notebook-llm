@@ -5,7 +5,8 @@
     "default_title": "新对话",
     "no_title": "未命名对话",
     "default_description": "创建了新对话",
-    "user_message_placeholder": "在此输入你的消息"
+    "user_message_placeholder": "在此输入你的消息",
+    "load_more": "加载更多"
   },
   "settings": "设置",
   "request_failure": "请求失败",

@@ -16,7 +16,11 @@ import { ChatModel } from '@/dao/chat'
 import { AgentDriver } from './agent-driver'
 import { getDefaultAgent } from '@/dao/agent'
 
+const MESSAGE_BATCH_SIZE = 20
+
 export class MessageController implements Initable {
+  protected totalMessages: number = 0
+
   protected readonly stages: {
     history: Store<MessageWithMetadata[]>
     justFinished: Store<MessageWithMetadata[]>
@@ -61,16 +65,15 @@ export class MessageController implements Initable {
    */
   public async appendUserMessage(msg: ChatMessage) {
     this.stages.processing.update((buf) => [
-      ...buf,
       {
         msg,
         status: 'finished',
       },
+      ...buf,
     ])
 
     const historyMessages = (this.stages.history.getValue() || [])
       .map((item) => item.msg)
-      .reverse()
       .slice(0, this.agent.getOptions().maxLookupHistory)
       .reverse()
 
@@ -80,7 +83,9 @@ export class MessageController implements Initable {
       historyMessages: [...historyMessages, msg],
     })
 
-    this.applyMessageBuilder(builder)
+    setTimeout(() => {
+      this.applyMessageBuilder(builder)
+    }, 100)
   }
 
   /**
@@ -90,11 +95,11 @@ export class MessageController implements Initable {
   public applyMessageBuilder(builder: AsyncMessageBuilder): void {
     const msg = builder.create(this.chatId)
     this.stages.processing.update((buf) => [
-      ...buf,
       {
         msg,
         status: 'building',
       },
+      ...buf,
     ])
 
     builder.build(msg.id, this).then(() => {
@@ -133,9 +138,38 @@ export class MessageController implements Initable {
     return this.stages
   }
 
-  async init(): Promise<void> {
-    const messages = await this.chatMessageModel.getByChatId(this.chatId)
+  public hasMore(): boolean {
+    return this.totalMessages > this.stages.history.getValue().length
+  }
 
+  public async loadMore(): Promise<void> {
+    const messages = await this.chatMessageModel.getByChatId(
+      this.chatId,
+      this.stages.history.getValue().length,
+      MESSAGE_BATCH_SIZE
+    )
+
+    this.stages.history.update((buf) => [
+      ...buf,
+      ...messages.map((msg) => ({
+        msg,
+        status: 'finished',
+      })),
+    ])
+  }
+
+  async init(): Promise<void> {
+    const limit = Math.max(
+      MESSAGE_BATCH_SIZE,
+      this.agent.getOptions().maxLookupHistory
+    )
+
+    const [messages, totalMessages] = await Promise.all([
+      this.chatMessageModel.getByChatId(this.chatId, 0, limit),
+      this.chatMessageModel.countMessagesByChatId(this.chatId),
+    ])
+
+    this.totalMessages = totalMessages
     this.stages.history.update(
       messages.map((msg) => ({
         msg,
@@ -165,7 +199,7 @@ export class MessageController implements Initable {
     }
 
     if (finishedMessages.length > 0) {
-      this.stages.justFinished.update((buf) => [...buf, ...finishedMessages])
+      this.stages.justFinished.update((buf) => [...finishedMessages, ...buf])
       this.stages.processing.update(restMessages)
     }
   }
@@ -191,10 +225,10 @@ export class MessageController implements Initable {
         }),
       ])
 
-      this.stages.history.update((buf) => [
-        ...buf,
-        ...messages.filter((msg) => !isEmptyMessage(msg.msg)),
-      ])
+      const newMessages = messages.filter((msg) => !isEmptyMessage(msg.msg))
+      this.totalMessages += newMessages.length
+      this.stages.history.update((buf) => [...newMessages, ...buf])
+
       this.stages.justFinished.update([])
     })
   }

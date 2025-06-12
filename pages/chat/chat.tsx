@@ -6,6 +6,7 @@ import {
   FlatList,
   Pressable,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import dayjs from 'dayjs'
@@ -24,6 +25,8 @@ import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
 import { IconAvatar } from '@/components/icon-avatar'
+import AntDesign from '@expo/vector-icons/AntDesign'
+import { useThemeColor } from '@/components/theme-provider'
 
 export interface ChatViewProps {
   chatId: string
@@ -66,53 +69,55 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
 
   // 预计算需要显示时间戳的消息ID和对应的时间戳字符串
   const timestampMap = useMemo(() => {
-    const map = new Map<string, string>()
+    const result = new Map<string, string>()
     let lastTimestampTime: dayjs.Dayjs | null = null
 
     if (chatMessages.length > 0) {
-      // 始终显示第一条消息的时间戳
-      map.set(chatMessages[0].msg.id, dayjs(chatMessages[0].msg.time).fromNow())
-      lastTimestampTime = dayjs(chatMessages[0].msg.time)
+      for (let i = chatMessages.length - 1; i >= 0; i--) {
+        const msg = chatMessages[i]
+        if (i === chatMessages.length - 1) {
+          result.set(msg.msg.id, dayjs(msg.msg.time).fromNow())
+          lastTimestampTime = dayjs(chatMessages[0].msg.time)
+          continue
+        }
 
-      // 检查其他消息
-      for (let i = 1; i < chatMessages.length; i++) {
-        const currentTime = dayjs(chatMessages[i].msg.time)
-
-        // 如果与上一个显示时间戳的消息时间差超过30分钟，显示时间戳
+        const currentTime = dayjs(msg.msg.time)
         if (
           lastTimestampTime &&
           currentTime.diff(lastTimestampTime, 'minute') >= 30
         ) {
-          map.set(
-            chatMessages[i].msg.id,
-            dayjs(chatMessages[i].msg.time).fromNow()
-          )
+          result.set(msg.msg.id, dayjs(msg.msg.time).fromNow())
           lastTimestampTime = currentTime
         }
       }
     }
 
-    return map
+    return result
   }, [chatMessages])
 
-  const invertedMessages = useMemo(() => {
-    return chatMessages.slice().reverse()
-  }, [chatMessages])
-
-  // 判断是否应该显示时间戳的函数
-  const shouldShowTimestamp = useCallback(
-    (messageId: string) => {
-      return timestampMap.has(messageId)
+  const { run: loadMore, loading: isLoadingMore } = useRequest(
+    {
+      runner: () => controller.loadMore(),
     },
-    [timestampMap]
+    []
   )
+
+  const handleReachEnd = useCallback(() => {
+    if (!controller.hasMore()) {
+      return
+    }
+
+    loadMore()
+  }, [loadMore])
+
+  const secondaryLabelColor = useThemeColor('secondaryLabel')
 
   return (
     <>
       <View className="h-[100vh] bg-secondaryBackground">
         <FlatList
           inverted
-          data={invertedMessages}
+          data={chatMessages}
           keyExtractor={(item) => item.msg.id}
           contentContainerStyle={{
             flexGrow: 1,
@@ -123,13 +128,30 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
               Keyboard.dismiss()
             }
           }}
+          onEndReached={handleReachEnd}
+          onEndReachedThreshold={0.2}
+          ListFooterComponent={() =>
+            controller.hasMore() ? (
+              <View className="h-20 flex items-center gap-2 justify-center mt-2 mb-6">
+                {isLoadingMore ? (
+                  <ActivityIndicator color="#999" />
+                ) : chatMessages.length > 0 ? (
+                  <>
+                    <AntDesign
+                      name="arrowup"
+                      size={24}
+                      color={secondaryLabelColor}
+                    />
+                    <Text className="text-secondaryLabel text-sm">
+                      {t('chat.load_more')}
+                    </Text>
+                  </>
+                ) : null}
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <>
-              {shouldShowTimestamp(item.msg.id) && (
-                <Text className="text-secondaryLabel text-lg text-center my-4">
-                  {timestampMap.get(item.msg.id)}
-                </Text>
-              )}
               <View className="px-4 flex flex-row items-start gap-4">
                 {item.msg.role === 'assistant' ? (
                   <View className="mt-1">
@@ -143,6 +165,11 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
                   <MessageView message={item.msg} status={item.status} />
                 </View>
               </View>
+              {timestampMap.has(item.msg.id) && (
+                <Text className="text-secondaryLabel text-md text-center my-4">
+                  {timestampMap.get(item.msg.id)}
+                </Text>
+              )}
             </>
           )}
           ListHeaderComponent={() => (

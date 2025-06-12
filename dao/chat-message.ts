@@ -46,11 +46,25 @@ export class ChatMessageModel implements Initable {
 
   async release(): Promise<void> {}
 
-  async getByChatId(chatId: string): Promise<ChatMessage[]> {
-    const result = await this.storage.queryAll<ChatMessage>(
-      sql('SELECT * FROM chat_message WHERE chat_id = ? ORDER BY time ASC', [
+  async countMessagesByChatId(chatId: string): Promise<number> {
+    const result = await this.storage.queryFirst<{ cnt: number }>(
+      sql('SELECT COUNT(*) AS cnt FROM chat_message WHERE chat_id = ?', [
         chatId,
       ])
+    )
+    return result?.cnt ?? 0
+  }
+
+  async getByChatId(
+    chatId: string,
+    offset: number,
+    limit: number
+  ): Promise<ChatMessage[]> {
+    const result = await this.storage.queryAll<ChatMessage>(
+      sql(
+        'SELECT * FROM chat_message WHERE chat_id = ? ORDER BY time DESC LIMIT ?, ?',
+        [chatId, offset, limit]
+      )
     )
     return result.map((item) => ChatMessageModel.deserialize(item))
   }

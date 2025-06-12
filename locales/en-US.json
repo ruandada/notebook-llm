@@ -5,7 +5,8 @@
     "default_title": "New chat",
     "no_title": "Unamed chat",
     "default_description": "Created a new conversation",
-    "user_message_placeholder": "Type your message here..."
+    "user_message_placeholder": "Type your message here...",
+    "load_more": "Load more"
   },
   "settings": "Settings",
   "request_failure": "Request failure",
