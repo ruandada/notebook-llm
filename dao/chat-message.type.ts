@@ -39,7 +39,7 @@ export interface StreamTextMessage extends MessageBase {
 export interface ErrorMessage extends MessageBase {
   type: 'error'
   content: {
-    message: string
+    reason: string
   }
 }
 
@@ -80,7 +80,7 @@ export const buildStreamTextMessage = (
 
 export const buildErrorMessage = (
   chatId: string,
-  errorMessage: string,
+  reason: string,
   role: MessageBase['role'] = 'assistant'
 ): ErrorMessage => ({
   id: messageId(),
@@ -91,7 +91,7 @@ export const buildErrorMessage = (
   extra: {},
   type: 'error',
   content: {
-    message: errorMessage,
+    reason,
   },
 })
 
@@ -121,7 +121,7 @@ export const isEmptyMessage = (message: ChatMessage): boolean => {
     : isStreamTextMessage(message)
     ? !message.content.buffer.length
     : isErrorMessage(message)
-    ? !message.content.message
+    ? !message.content.reason
     : false
 }
 
@@ -132,7 +132,7 @@ export const getMessageTextContent = (message: ChatMessage): string => {
   } else if (isStreamTextMessage(message)) {
     text = message.content.buffer.join('')
   } else if (isErrorMessage(message)) {
-    text = message.content.message
+    text = message.content.reason
   } else {
     text = `[${i18n.t('msg.non_text')}]`
   }

@@ -27,6 +27,7 @@ import clsx from 'clsx'
 import { IconAvatar } from '@/components/icon-avatar'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import { useThemeColor } from '@/components/theme-provider'
+import { formatRelativeTime } from '@/core/utils/date'
 
 export interface ChatViewProps {
   chatId: string
@@ -76,7 +77,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
       for (let i = chatMessages.length - 1; i >= 0; i--) {
         const msg = chatMessages[i]
         if (i === chatMessages.length - 1) {
-          result.set(msg.msg.id, dayjs(msg.msg.time).fromNow())
+          result.set(msg.msg.id, formatRelativeTime(msg.msg.time))
           lastTimestampTime = dayjs(chatMessages[0].msg.time)
           continue
         }
@@ -86,7 +87,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
           lastTimestampTime &&
           currentTime.diff(lastTimestampTime, 'minute') >= 30
         ) {
-          result.set(msg.msg.id, dayjs(msg.msg.time).fromNow())
+          result.set(msg.msg.id, formatRelativeTime(msg.msg.time))
           lastTimestampTime = currentTime
         }
       }

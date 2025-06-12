@@ -109,7 +109,7 @@ export class ChatMessageModel implements Initable {
     } catch (e) {
       msg.type = 'error'
       msg.content = {
-        message: `failed to parse content: ${row.content}`,
+        reason: `failed to parse content: ${row.content}`,
       }
     }
 

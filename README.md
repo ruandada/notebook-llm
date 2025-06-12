@@ -2,11 +2,11 @@
 
 ## Todos
 
+[] Use zod/v4
+[] Tool call display & Message detail
 [] Agent avatar
-[] Limited chat history fetch
 [] Agent switches
-[] Tool call display
-[] Chat error handling
+[] Automatically update chat title
 
 ## Icons
 

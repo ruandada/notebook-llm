@@ -1,5 +1,6 @@
 import {
   ChatMessage,
+  isErrorMessage,
   isStreamTextMessage,
   isTextMessage,
   StreamTextMessage,
@@ -10,6 +11,9 @@ import { ScrollView, Text, View, ViewProps } from 'react-native'
 import { StreamTextMessageView } from './stream-text-message-view'
 import { TextMessageView } from './text-message-view'
 import { MessageWithMetadata } from '../../../core/chat'
+import { ErrorMessageView } from './error-message-view'
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons'
+import { useThemeColor } from '@/components/theme-provider'
 
 export interface MessageViewProps extends ViewProps {
   message: ChatMessage
@@ -18,6 +22,7 @@ export interface MessageViewProps extends ViewProps {
 
 export const MessageView: React.FC<MessageViewProps> = memo(
   ({ children, message, ...restProps }) => {
+    const secondaryLabelColor = useThemeColor('secondaryLabel')
     return (
       <View className="mb-6">
         {isTextMessage(message) ? (
@@ -28,22 +33,20 @@ export const MessageView: React.FC<MessageViewProps> = memo(
           <StreamTextMessageView message={message} {...restProps}>
             {children}
           </StreamTextMessageView>
+        ) : isErrorMessage(message) ? (
+          <ErrorMessageView message={message} {...restProps} />
         ) : null}
 
         {message.extra?.tool_call ? (
-          <View className="p-4 bg-cardBackground rounded-xl shadow-lg shadow-black/5 border-border border">
-            <Text className="mb-4 text-lg text-tint">
+          <View className="flex flex-row items-center gap-2 h-[32] mt-1">
+            <MaterialCommunityIcons
+              name="function"
+              size={24}
+              color={secondaryLabelColor}
+            />
+            <Text className="text-lg text-secondaryLabel">
               {message.extra.tool_call.title}
             </Text>
-            <ScrollView className="bg-secondaryBackground p-2 max-h-[100] rounded-xl">
-              <Text className="text-label font-mono tracking-wide leading-6">
-                {JSON.stringify(
-                  message.extra.tool_call?.result ?? null,
-                  null,
-                  2
-                )}
-              </Text>
-            </ScrollView>
           </View>
         ) : null}
       </View>

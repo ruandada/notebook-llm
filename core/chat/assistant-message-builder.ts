@@ -3,6 +3,7 @@ import { AsyncMessageBuilder } from './abstract'
 import {
   buildStreamTextMessage,
   ChatMessage,
+  isErrorMessage,
   isTextMessage,
   StreamTextMessage,
   TextMessage,
@@ -43,6 +44,13 @@ export const assistantMessageBuilder = ({
             openaiMessages.push({
               role: 'assistant',
               content: msg.content.text,
+            })
+          }
+
+          if (isErrorMessage(msg) && msg.content.reason) {
+            openaiMessages.push({
+              role: 'assistant',
+              content: `Error: ${msg.content.reason}`,
             })
           }
 

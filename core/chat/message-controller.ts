@@ -4,6 +4,7 @@ import { Store } from '@/core/store'
 import { createMemoryStore } from '@/core/store'
 import { ChatMessageModel } from '@/dao/chat-message'
 import {
+  buildErrorMessage,
   ChatMessage,
   getMessageTextContent,
   isEmptyMessage,
@@ -102,15 +103,33 @@ export class MessageController implements Initable {
       ...buf,
     ])
 
-    builder.build(msg.id, this).then(() => {
-      this.stages.processing.update((buf) => {
-        for (const item of buf) {
-          if (item.msg.id === msg.id) {
-            item.status = 'finished'
+    builder
+      .build(msg.id, this)
+      .then(() => {
+        this.stages.processing.update((buf) => {
+          for (const item of buf) {
+            if (item.msg.id === msg.id) {
+              item.status = 'finished'
+            }
           }
-        }
+        })
       })
-    })
+      .catch((e) => {
+        this.stages.processing.update((buf) => {
+          for (let i = 0; i < buf.length; i++) {
+            if (buf[i].msg.id === msg.id) {
+              buf[i] = {
+                status: 'finished',
+                msg: buildErrorMessage(
+                  this.chatId,
+                  (e instanceof Error ? e.message : String(e)) ??
+                    'unknown error'
+                ),
+              }
+            }
+          }
+        })
+      })
   }
 
   public updateProcessingMessage<M extends ChatMessage>(
@@ -207,15 +226,17 @@ export class MessageController implements Initable {
   private async onJustFinishedMessagesChange(
     messages: MessageWithMetadata[]
   ): Promise<void> {
-    if (!messages.length) {
+    const newMessages = messages.filter((msg) => !isEmptyMessage(msg.msg))
+    if (!newMessages.length) {
+      this.stages.justFinished.update([])
       return
     }
 
     await this.locks.justFinished.withLock(async (): Promise<void> => {
-      const lastMessage = messages[messages.length - 1]
+      const lastMessage = newMessages[messages.length - 1]
 
       await Promise.all([
-        this.chatMessageModel.insert(messages.map((item) => item.msg)),
+        this.chatMessageModel.insert(newMessages.map((item) => item.msg)),
         this.chatModel.updateChatExtra(this.chatId, {
           last_message_role: lastMessage.msg.role,
           last_message_text: getMessageTextContent(lastMessage.msg).substring(
@@ -225,7 +246,6 @@ export class MessageController implements Initable {
         }),
       ])
 
-      const newMessages = messages.filter((msg) => !isEmptyMessage(msg.msg))
       this.totalMessages += newMessages.length
       this.stages.history.update((buf) => [...newMessages, ...buf])
 

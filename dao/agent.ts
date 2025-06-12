@@ -15,7 +15,7 @@ export const getDefaultAgent = (): Agent => {
     id: 'default',
     systemPrompts: [],
     maxLookupHistory: 10,
-    useBuiltinTools: false,
+    useBuiltinTools: true,
     tools: [],
     modelOptions: {
       temperature: 0.2,
