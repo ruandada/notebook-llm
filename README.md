@@ -2,8 +2,9 @@
 
 ## Todos
 
-[] Use zod/v4
 [] Tool call display & Message detail
+[] Use zod/v4
+[] Max tool call round
 [] Agent avatar
 [] Agent switches
 [] Automatically update chat title

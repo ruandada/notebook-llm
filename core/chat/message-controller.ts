@@ -123,7 +123,7 @@ export class MessageController implements Initable {
                 msg: buildErrorMessage(
                   this.chatId,
                   (e instanceof Error ? e.message : String(e)) ??
-                    'unknown error'
+                    'Unknown error'
                 ),
               }
             }
