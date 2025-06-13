@@ -13,6 +13,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 
 import { useEffect } from 'react'
 import { getLocales } from 'expo-localization'
+import { FileSystemCleaner } from '@/core/utils'
 
 interface AppInitResult {
   loaded: boolean

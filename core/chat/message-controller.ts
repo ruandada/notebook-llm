@@ -132,6 +132,11 @@ export class MessageController implements Initable {
       })
   }
 
+  /**
+   * Update a message in the processing stage
+   * @param messageId - The id of the message to update
+   * @param by - The function to update the message
+   */
   public updateProcessingMessage<M extends ChatMessage>(
     messageId: string,
     by: (msg: M) => ChatMessage
@@ -145,6 +150,11 @@ export class MessageController implements Initable {
     })
   }
 
+  /**
+   * Get a message in the processing stage by id
+   * @param messageId - The id of the message to get
+   * @returns The message if found, otherwise undefined
+   */
   public getProcessingMessageById(
     messageId: string
   ): MessageWithMetadata | undefined {
@@ -161,6 +171,13 @@ export class MessageController implements Initable {
     return this.totalMessages > this.stages.history.getValue().length
   }
 
+  public getAgent(): AgentDriver {
+    return this.agent
+  }
+
+  /**
+   * Load more messages from the chat history (if there are more messages)
+   */
   public async loadMore(): Promise<void> {
     const messages = await this.chatMessageModel.getByChatId(
       this.chatId,
@@ -177,6 +194,9 @@ export class MessageController implements Initable {
     ])
   }
 
+  /**
+   * Initialize the message controller, and load the history messages
+   */
   async init(): Promise<void> {
     const limit = Math.max(
       MESSAGE_BATCH_SIZE,
@@ -205,6 +225,10 @@ export class MessageController implements Initable {
     this.stages.justFinished.unsubscribe(this.onJustFinishedMessagesChange)
   }
 
+  /**
+   * Handle the change of processing messages, and push finished messages to the just finished stage
+   * @param messages - The new processing messages
+   */
   private onProcessingMessagesChange(messages: MessageWithMetadata[]): void {
     const finishedMessages: MessageWithMetadata[] = []
     const restMessages: MessageWithMetadata[] = []
@@ -223,6 +247,10 @@ export class MessageController implements Initable {
     }
   }
 
+  /**
+   * Handle the change of just finished messages, and push finished messages to the chat history
+   * @param messages - The new just finished messages
+   */
   private async onJustFinishedMessagesChange(
     messages: MessageWithMetadata[]
   ): Promise<void> {

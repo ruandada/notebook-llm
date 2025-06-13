@@ -28,6 +28,7 @@ import { IconAvatar } from '@/components/icon-avatar'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import { useThemeColor } from '@/components/theme-provider'
 import { formatRelativeTime } from '@/core/utils/date'
+import ContextMenu from 'react-native-context-menu-view'
 
 export interface ChatViewProps {
   chatId: string
@@ -112,6 +113,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
   }, [loadMore])
 
   const secondaryLabelColor = useThemeColor('secondaryLabel')
+  const secondaryBackgroundColor = useThemeColor('secondaryBackground')
 
   return (
     <>
@@ -153,19 +155,12 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
           }
           renderItem={({ item }) => (
             <>
-              <View className="px-4 flex flex-row items-start gap-4">
-                {item.msg.role === 'assistant' ? (
-                  <View className="mt-1">
-                    <IconAvatar
-                      icon="materialcommunityicons/face-agent"
-                      size={32}
-                    />
-                  </View>
-                ) : null}
-                <View className="flex-1">
-                  <MessageView message={item.msg} status={item.status} />
-                </View>
-              </View>
+              <MessageView
+                agent={controller.getAgent().getOptions()}
+                message={item.msg}
+                status={item.status}
+              />
+
               {timestampMap.has(item.msg.id) && (
                 <Text className="text-secondaryLabel text-md text-center my-4">
                   {timestampMap.get(item.msg.id)}

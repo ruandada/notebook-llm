@@ -1,14 +1,17 @@
 import { TextMessage } from '@/dao/chat-message.type'
 import React, { memo } from 'react'
-import { Text, View, ViewProps } from 'react-native'
+import { Pressable, Text, View, ViewProps } from 'react-native'
 import clsx from 'clsx'
+import { ChatMessageContextMenu } from './chat-message-context-menu'
+import { MessageWithMetadata } from '@/core/chat'
 
 export interface TextMessageViewProps extends ViewProps {
   message: TextMessage
+  status: MessageWithMetadata['status']
 }
 
 export const TextMessageView: React.FC<TextMessageViewProps> = memo(
-  ({ message, children, ...restProps }) => {
+  ({ message, status, children, ...restProps }) => {
     const isUserMessage = message.role === 'user'
 
     if (!message.content.text) {
@@ -24,10 +27,14 @@ export const TextMessageView: React.FC<TextMessageViewProps> = memo(
         )}
       >
         {isUserMessage ? (
-          <View className="max-w-[80%] rounded-2xl px-4 py-3 bg-tint rounded-br-none">
-            <Text className="leading-6 text-lg text-white">
-              {message.content.text}
-            </Text>
+          <View className="max-w-[80%]">
+            <ChatMessageContextMenu message={message} status={status}>
+              <Pressable className="rounded-2xl px-4 py-3 bg-tint rounded-br-none">
+                <Text className="leading-6 text-lg text-white">
+                  {message.content.text}
+                </Text>
+              </Pressable>
+            </ChatMessageContextMenu>
           </View>
         ) : (
           <View>
