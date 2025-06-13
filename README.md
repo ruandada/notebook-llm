@@ -2,7 +2,10 @@
 
 ## Todos
 
-[] Tool call display & Message detail
+[] Delete messages
+[] Re-answer messages
+[] Manually continuation of the conversation
+[] Tool call display & Message inspect
 [] Use zod/v4
 [] Max tool call round
 [] Agent avatar

@@ -37,5 +37,9 @@ export const useMessageController = (chatId: string) => {
     ),
     loaded,
     error,
+    processingMessageCount: useMemo(
+      () => historyMessages.length + justFinishedMessages.length,
+      [historyMessages, justFinishedMessages]
+    ),
   }
 }

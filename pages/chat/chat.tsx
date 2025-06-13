@@ -24,11 +24,9 @@ import { useAnimatedValue } from '@/hooks/use-animated-value'
 import FontAwesome from '@expo/vector-icons/FontAwesome'
 import { useTranslation } from 'react-i18next'
 import clsx from 'clsx'
-import { IconAvatar } from '@/components/icon-avatar'
 import AntDesign from '@expo/vector-icons/AntDesign'
 import { useThemeColor } from '@/components/theme-provider'
 import { formatRelativeTime } from '@/core/utils/date'
-import ContextMenu from 'react-native-context-menu-view'
 
 export interface ChatViewProps {
   chatId: string
@@ -157,8 +155,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
             <>
               <MessageView
                 agent={controller.getAgent().getOptions()}
-                message={item.msg}
-                status={item.status}
+                message={item}
               />
 
               {timestampMap.has(item.msg.id) && (

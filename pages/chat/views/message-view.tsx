@@ -1,5 +1,6 @@
 import {
   ChatMessage,
+  ErrorMessage,
   isErrorMessage,
   isStreamTextMessage,
   isTextMessage,
@@ -19,30 +20,38 @@ import { Agent } from '@/dao/agent'
 import { ChatMessageContextMenu } from './chat-message-context-menu'
 
 export interface MessageViewProps extends ViewProps {
-  message: ChatMessage
+  message: MessageWithMetadata
   agent: Agent
-  status: MessageWithMetadata['status']
 }
 
 export const MessageView: React.FC<MessageViewProps> = memo(
-  ({ children, agent, message, status, ...restProps }) => {
+  ({ children, agent, message, ...restProps }) => {
     const secondaryLabelColor = useThemeColor('secondaryLabel')
 
-    const viewUI = (
+    const contentView = (
       <>
-        {isTextMessage(message) ? (
-          <TextMessageView message={message} status={status} {...restProps}>
+        {isTextMessage(message.msg) ? (
+          <TextMessageView
+            message={message as MessageWithMetadata<TextMessage>}
+            {...restProps}
+          >
             {children}
           </TextMessageView>
-        ) : isStreamTextMessage(message) ? (
-          <StreamTextMessageView message={message} {...restProps}>
+        ) : isStreamTextMessage(message.msg) ? (
+          <StreamTextMessageView
+            message={message as MessageWithMetadata<StreamTextMessage>}
+            {...restProps}
+          >
             {children}
           </StreamTextMessageView>
-        ) : isErrorMessage(message) ? (
-          <ErrorMessageView message={message} {...restProps} />
+        ) : isErrorMessage(message.msg) ? (
+          <ErrorMessageView
+            message={message as MessageWithMetadata<ErrorMessage>}
+            {...restProps}
+          />
         ) : null}
 
-        {message.extra?.tool_call ? (
+        {message.msg.extra?.tool_call ? (
           <View className="flex flex-row items-center gap-2 h-[32] mt-1">
             <MaterialCommunityIcons
               name="function"
@@ -50,22 +59,25 @@ export const MessageView: React.FC<MessageViewProps> = memo(
               color={secondaryLabelColor}
             />
             <Text className="text-lg text-secondaryLabel">
-              {message.extra.tool_call.title}
+              {message.msg.extra.tool_call.title}
             </Text>
           </View>
         ) : null}
       </>
     )
 
-    if (message.role === 'assistant') {
+    if (message.msg.role === 'assistant') {
       return (
-        <ChatMessageContextMenu message={message} status={status}>
+        <ChatMessageContextMenu
+          message={message}
+          disabled={message.stage !== 'history'}
+        >
           <Pressable className="px-4 py-3 flex flex-row items-start gap-4">
             <View className="mt-1">
               <AgentAvatar agent={agent} size={32} />
             </View>
 
-            <View className="flex-1">{viewUI}</View>
+            <View className="flex-1">{contentView}</View>
           </Pressable>
         </ChatMessageContextMenu>
       )
@@ -73,7 +85,7 @@ export const MessageView: React.FC<MessageViewProps> = memo(
 
     return (
       <View className="px-4 py-3 flex flex-row items-start gap-4">
-        <View className="flex-1">{viewUI}</View>
+        <View className="flex-1">{contentView}</View>
       </View>
     )
   }

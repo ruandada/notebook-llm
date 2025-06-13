@@ -6,15 +6,14 @@ import { ChatMessageContextMenu } from './chat-message-context-menu'
 import { MessageWithMetadata } from '@/core/chat'
 
 export interface TextMessageViewProps extends ViewProps {
-  message: TextMessage
-  status: MessageWithMetadata['status']
+  message: MessageWithMetadata<TextMessage>
 }
 
 export const TextMessageView: React.FC<TextMessageViewProps> = memo(
-  ({ message, status, children, ...restProps }) => {
-    const isUserMessage = message.role === 'user'
+  ({ message, children, ...restProps }) => {
+    const isUserMessage = message.msg.role === 'user'
 
-    if (!message.content.text) {
+    if (!message.msg.content.text) {
       return null
     }
 
@@ -28,10 +27,13 @@ export const TextMessageView: React.FC<TextMessageViewProps> = memo(
       >
         {isUserMessage ? (
           <View className="max-w-[80%]">
-            <ChatMessageContextMenu message={message} status={status}>
+            <ChatMessageContextMenu
+              message={message}
+              disabled={message.stage !== 'history'}
+            >
               <Pressable className="rounded-2xl px-4 py-3 bg-tint rounded-br-none">
                 <Text className="leading-6 text-lg text-white">
-                  {message.content.text}
+                  {message.msg.content.text}
                 </Text>
               </Pressable>
             </ChatMessageContextMenu>
@@ -39,7 +41,7 @@ export const TextMessageView: React.FC<TextMessageViewProps> = memo(
         ) : (
           <View>
             <Text className="leading-8 text-lg text-label tracking-wide">
-              {message.content.text}
+              {message.msg.content.text}
             </Text>
           </View>
         )}

@@ -2,9 +2,10 @@ import { StreamTextMessage } from '@/dao/chat-message.type'
 import React, { memo } from 'react'
 import { Text, View, ViewProps } from 'react-native'
 import clsx from 'clsx'
+import { MessageWithMetadata } from '@/core/chat'
 
 export interface StreamTextMessageViewProps extends ViewProps {
-  message: StreamTextMessage
+  message: MessageWithMetadata<StreamTextMessage>
 }
 
 export const StreamTextMessageView: React.FC<StreamTextMessageViewProps> = memo(
@@ -19,7 +20,7 @@ export const StreamTextMessageView: React.FC<StreamTextMessageViewProps> = memo(
       >
         <View>
           <Text className="text-label text-lg leading-8 tracking-wide">
-            {message.content.buffer.join('')}
+            {message.msg.content.buffer.join('')}
             <Text className="text-tint ml-2">▋</Text>
           </Text>
         </View>

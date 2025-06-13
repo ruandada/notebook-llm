@@ -6,7 +6,11 @@
     "no_title": "Unamed chat",
     "default_description": "Created a new conversation",
     "user_message_placeholder": "Type your message here...",
-    "load_more": "Load more"
+    "load_more": "Load more",
+    "re_answer": "Re-answer",
+    "re_answer_subtitle": "Regenerate this message",
+    "inspect": "Inspect",
+    "inspect_subtitle": "View or modify this message"
   },
   "settings": "Settings",
   "request_failure": "Request failure",
@@ -14,5 +18,7 @@
     "non_text": "Non-text message"
   },
   "home": "Home",
-  "error": "Error"
+  "error": "Error",
+  "delete": "Delete",
+  "inspect": "Inspect"
 }

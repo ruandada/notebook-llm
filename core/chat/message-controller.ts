@@ -26,6 +26,8 @@ export class MessageController implements Initable {
     history: Store<MessageWithMetadata[]>
     justFinished: Store<MessageWithMetadata[]>
     processing: Store<MessageWithMetadata[]>
+
+    removing: Store<MessageWithMetadata[]>
   }
 
   protected readonly locks: {
@@ -44,6 +46,8 @@ export class MessageController implements Initable {
       history: createMemoryStore<MessageWithMetadata[]>(() => []),
       justFinished: createMemoryStore<MessageWithMetadata[]>(() => []),
       processing: createMemoryStore<MessageWithMetadata[]>(() => []),
+
+      removing: createMemoryStore<MessageWithMetadata[]>(() => []),
     }
 
     this.locks = {
@@ -65,10 +69,11 @@ export class MessageController implements Initable {
    * @param msg - The user message to append
    */
   public async appendUserMessage(msg: ChatMessage) {
-    this.stages.processing.update((buf) => [
+    this.stages.justFinished.update((buf): MessageWithMetadata[] => [
       {
         msg,
         status: 'finished',
+        stage: 'justFinished',
       },
       ...buf,
     ])
@@ -95,10 +100,11 @@ export class MessageController implements Initable {
    */
   public applyMessageBuilder(builder: AsyncMessageBuilder): void {
     const msg = builder.create(this.chatId)
-    this.stages.processing.update((buf) => [
+    this.stages.processing.update((buf): MessageWithMetadata[] => [
       {
         msg,
         status: 'building',
+        stage: 'processing',
       },
       ...buf,
     ])
@@ -119,6 +125,7 @@ export class MessageController implements Initable {
           for (let i = 0; i < buf.length; i++) {
             if (buf[i].msg.id === msg.id) {
               buf[i] = {
+                ...buf[i],
                 status: 'finished',
                 msg: buildErrorMessage(
                   this.chatId,
@@ -212,6 +219,7 @@ export class MessageController implements Initable {
     this.stages.history.update(
       messages.map((msg) => ({
         msg,
+        stage: 'history',
         status: 'finished',
       }))
     )
@@ -242,7 +250,15 @@ export class MessageController implements Initable {
     }
 
     if (finishedMessages.length > 0) {
-      this.stages.justFinished.update((buf) => [...finishedMessages, ...buf])
+      this.stages.justFinished.update((buf) => [
+        ...finishedMessages.map(
+          (msg): MessageWithMetadata => ({
+            ...msg,
+            stage: 'justFinished',
+          })
+        ),
+        ...buf,
+      ])
       this.stages.processing.update(restMessages)
     }
   }
@@ -275,7 +291,15 @@ export class MessageController implements Initable {
       ])
 
       this.totalMessages += newMessages.length
-      this.stages.history.update((buf) => [...newMessages, ...buf])
+      this.stages.history.update((buf) => [
+        ...newMessages.map(
+          (msg): MessageWithMetadata => ({
+            ...msg,
+            stage: 'history',
+          })
+        ),
+        ...buf,
+      ])
 
       this.stages.justFinished.update([])
     })
