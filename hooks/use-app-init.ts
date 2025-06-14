@@ -1,6 +1,5 @@
 import { useInstance } from '@/core/di'
 import { compose, useInitableInit } from '@/core/initable'
-import { ModelStorage } from '@/dao/base'
 import { ChatModel } from '@/dao/chat'
 import { ChatMessageModel } from '@/dao/chat-message'
 import { ConfigStore } from '@/store/config'
@@ -14,6 +13,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 import { useEffect } from 'react'
 import { getLocales } from 'expo-localization'
 import { FileSystemCleaner } from '@/core/utils'
+import { SQLiteStorage } from '@/core/sqlite'
 
 interface AppInitResult {
   loaded: boolean
@@ -44,7 +44,7 @@ export const useAppInit = (): AppInitResult => {
         useInstance(ConfigStore),
         compose(
           'sequence',
-          useInstance(ModelStorage),
+          useInstance(SQLiteStorage),
           compose(
             'parallel',
             useInstance(ChatMessageModel),

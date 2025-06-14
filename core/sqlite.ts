@@ -9,13 +9,13 @@ export interface Statement {
 
 export const sql = (
   template: string,
-  params: Record<string, any> | any[]
+  params?: Record<string, any> | any[]
 ): Statement => ({
   template,
-  params,
+  params: params || [],
 })
 
-export const inserts = <T extends object>(tableName: string, rows: T[]) => {
+export const insert = <T extends object>(tableName: string, rows: T[]) => {
   if (rows.length === 0) {
     throw new Error('rows is empty')
   }
@@ -39,8 +39,12 @@ export const inserts = <T extends object>(tableName: string, rows: T[]) => {
   )
 }
 
+export const N = (n: number) => {
+  return Array(n).fill('?').join(', ')
+}
+
 @Injectable()
-export class ModelStorage implements Initable {
+export class SQLiteStorage implements Initable {
   private db: SQLite.SQLiteDatabase = null!
 
   async init(): Promise<void> {
@@ -79,9 +83,9 @@ export class ModelStorage implements Initable {
     return this.db.getEachAsync<T>(stmt.template, stmt.params)
   }
 
-  withTransaction(task: (tx: ModelStorage) => Promise<void>): Promise<void> {
+  withTransaction(task: (tx: SQLiteStorage) => Promise<void>): Promise<void> {
     return this.db.withExclusiveTransactionAsync(async (tx) => {
-      const storage = new ModelStorage()
+      const storage = new SQLiteStorage()
       Object.assign(storage, {
         db: tx,
       })

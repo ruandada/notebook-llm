@@ -1,6 +1,9 @@
-export { createFileSystemStorageProvider } from './filesystem'
-export { createWebStorageProvider } from './web-storage'
-export { createMemoryStorageProvider, createMemoryStore } from './memory'
+export { createFileSystemStorageProvider } from './provider-filesystem'
+export { createWebStorageProvider } from './provider-web'
+export {
+  createMemoryStorageProvider,
+  createMemoryStore,
+} from './provider-memory'
 
 export * from './store'
 

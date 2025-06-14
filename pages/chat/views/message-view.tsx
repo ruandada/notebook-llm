@@ -18,14 +18,16 @@ import { useThemeColor } from '@/components/theme-provider'
 import { AgentAvatar } from './agent-avatar'
 import { Agent } from '@/dao/agent'
 import { ChatMessageContextMenu } from './chat-message-context-menu'
+import { MessageController } from '@/core/chat/message-controller'
 
 export interface MessageViewProps extends ViewProps {
   message: MessageWithMetadata
   agent: Agent
+  controller: MessageController
 }
 
 export const MessageView: React.FC<MessageViewProps> = memo(
-  ({ children, agent, message, ...restProps }) => {
+  ({ children, controller, agent, message, ...restProps }) => {
     const secondaryLabelColor = useThemeColor('secondaryLabel')
 
     const contentView = (
@@ -33,6 +35,7 @@ export const MessageView: React.FC<MessageViewProps> = memo(
         {isTextMessage(message.msg) ? (
           <TextMessageView
             message={message as MessageWithMetadata<TextMessage>}
+            controller={controller}
             {...restProps}
           >
             {children}
@@ -71,6 +74,7 @@ export const MessageView: React.FC<MessageViewProps> = memo(
         <ChatMessageContextMenu
           message={message}
           disabled={message.stage !== 'history'}
+          controller={controller}
         >
           <Pressable className="px-4 py-3 flex flex-row items-start gap-4">
             <View className="mt-1">

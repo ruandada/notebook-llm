@@ -27,7 +27,7 @@ export class MessageController implements Initable {
     justFinished: Store<MessageWithMetadata[]>
     processing: Store<MessageWithMetadata[]>
 
-    removing: Store<MessageWithMetadata[]>
+    historyOperations: Store<Record<string, MessageWithMetadata>>
   }
 
   protected readonly locks: {
@@ -47,15 +47,22 @@ export class MessageController implements Initable {
       justFinished: createMemoryStore<MessageWithMetadata[]>(() => []),
       processing: createMemoryStore<MessageWithMetadata[]>(() => []),
 
-      removing: createMemoryStore<MessageWithMetadata[]>(() => []),
+      historyOperations: createMemoryStore<Record<string, MessageWithMetadata>>(
+        () => ({})
+      ),
     }
 
     this.locks = {
       justFinished: createAsyncLock(1, 'latest'),
     }
-    ;[this.onProcessingMessagesChange, this.onJustFinishedMessagesChange] = [
+    ;[
+      this.onProcessingMessagesChange,
+      this.onJustFinishedMessagesChange,
+      this.onHistoryOperationsChange,
+    ] = [
       this.onProcessingMessagesChange.bind(this),
       this.onJustFinishedMessagesChange.bind(this),
+      this.onHistoryOperationsChange.bind(this),
     ]
     this.agent = new AgentDriver(getDefaultAgent())
   }
@@ -170,6 +177,22 @@ export class MessageController implements Initable {
       .find((item) => item.msg.id === messageId)
   }
 
+  public removeHistoryMessage(messageId: string): void {
+    const msg = this.stages.history
+      .getValue()
+      .find((item) => item.msg.id === messageId)
+    if (!msg) {
+      return
+    }
+    this.stages.historyOperations.update((operations) => {
+      operations[msg.msg.id] = {
+        ...msg,
+        status: 'willRemove',
+        stage: 'historyOperations',
+      }
+    })
+  }
+
   public getStores(): typeof this.stages {
     return this.stages
   }
@@ -226,11 +249,13 @@ export class MessageController implements Initable {
 
     this.stages.processing.subscribe(this.onProcessingMessagesChange)
     this.stages.justFinished.subscribe(this.onJustFinishedMessagesChange)
+    this.stages.historyOperations.subscribe(this.onHistoryOperationsChange)
   }
 
   async release(): Promise<void> {
     this.stages.processing.unsubscribe(this.onProcessingMessagesChange)
     this.stages.justFinished.unsubscribe(this.onJustFinishedMessagesChange)
+    this.stages.historyOperations.unsubscribe(this.onHistoryOperationsChange)
   }
 
   /**
@@ -303,5 +328,44 @@ export class MessageController implements Initable {
 
       this.stages.justFinished.update([])
     })
+  }
+
+  private async onHistoryOperationsChange(
+    operations: Record<string, MessageWithMetadata>
+  ): Promise<void> {
+    const willRemove: MessageWithMetadata[] = []
+    const nextState: Record<string, MessageWithMetadata> = {
+      ...operations,
+    }
+
+    Object.values(operations).forEach((msg): void => {
+      if (msg.status === 'willRemove') {
+        willRemove.push(msg)
+      }
+      nextState[msg.msg.id] = {
+        ...msg,
+        status: 'removing',
+      }
+    })
+
+    if (willRemove.length > 0) {
+      const ids = new Set(willRemove.map((msg) => msg.msg.id))
+      this.chatMessageModel
+        .deleteMessages(Array.from(ids))
+        .then(() => {
+          this.stages.history.update((buf) =>
+            buf.filter((msg) => !ids.has(msg.msg.id))
+          )
+          this.stages.historyOperations.update((operations) => {
+            for (const id of ids) {
+              delete operations[id]
+            }
+          })
+          this.totalMessages -= willRemove.length
+        })
+        .catch((e) => {
+          console.error(e)
+        })
+    }
   }
 }

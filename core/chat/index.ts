@@ -7,6 +7,7 @@ import { useMemo } from 'react'
 import { ChatMessageModel } from '@/dao/chat-message'
 import { useOpenAI } from '../ai'
 import { ChatModel } from '@/dao/chat'
+import { MessageWithMetadata } from './abstract'
 
 export type { MessageWithMetadata } from './abstract'
 
@@ -24,16 +25,25 @@ export const useMessageController = (chatId: string) => {
   const historyMessages = useStore(stores.history)
   const justFinishedMessages = useStore(stores.justFinished)
   const processingMessages = useStore(stores.processing)
+  const historyOperations = useStore(stores.historyOperations)
 
   return {
     controller,
     chatMessages: useMemo(
-      () => [
-        ...processingMessages,
-        ...justFinishedMessages,
-        ...historyMessages,
-      ],
-      [historyMessages, justFinishedMessages, processingMessages]
+      () =>
+        [
+          ...processingMessages,
+          ...justFinishedMessages,
+          ...historyMessages,
+        ].map((item) => {
+          return historyOperations[item.msg.id] || item
+        }),
+      [
+        historyMessages,
+        justFinishedMessages,
+        processingMessages,
+        historyOperations,
+      ]
     ),
     loaded,
     error,

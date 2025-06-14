@@ -32,13 +32,13 @@ export const createAsyncLock = (
           if (priority === 'latest') {
             const first = queue.shift()
             if (first) {
-              first.reject('Queue limit is reached')
+              first.reject('queue limit exceeded')
             }
             queue.push({ resolve, reject })
             return
           }
 
-          reject('Queue limit is reached')
+          reject('queue limit exceeded')
           return
         }
         queue.push({ resolve, reject })

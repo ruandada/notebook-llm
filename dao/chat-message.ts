@@ -1,12 +1,12 @@
 import { Injectable, Require } from '@/core/di'
-import { inserts, ModelStorage, sql } from './base'
 import { Initable } from '@/core/initable'
 import { ChatMessage } from './chat-message.type'
+import { insert, N, sql, SQLiteStorage } from '@/core/sqlite'
 
 @Injectable()
-@Require(ModelStorage)
+@Require(SQLiteStorage)
 export class ChatMessageModel implements Initable {
-  constructor(private readonly storage: ModelStorage) {}
+  constructor(private readonly storage: SQLiteStorage) {}
 
   async init(): Promise<void> {
     await this.storage.execute(`
@@ -69,9 +69,18 @@ export class ChatMessageModel implements Initable {
     return result.map((item) => ChatMessageModel.deserialize(item))
   }
 
+  async deleteMessages(messageIds: string[]): Promise<void> {
+    await this.storage.run(
+      sql(
+        `DELETE FROM chat_message WHERE "id" IN (${N(messageIds.length)})`,
+        messageIds
+      )
+    )
+  }
+
   async insert(messages: ChatMessage[]): Promise<void> {
     await this.storage.run(
-      inserts(
+      insert(
         'chat_message',
         messages.map((msg) => ChatMessageModel.serialize(msg))
       )

@@ -156,6 +156,7 @@ export const ChatView: React.FC<ChatViewProps> = memo(({ chatId }) => {
               <MessageView
                 agent={controller.getAgent().getOptions()}
                 message={item}
+                controller={controller}
               />
 
               {timestampMap.has(item.msg.id) && (

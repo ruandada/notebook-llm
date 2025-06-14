@@ -3,8 +3,8 @@ import type { MessageController } from './message-controller'
 
 export interface MessageWithMetadata<M extends ChatMessage = ChatMessage> {
   msg: M
-  status: 'finished' | 'building'
-  stage: 'processing' | 'history' | 'justFinished'
+  status: 'finished' | 'building' | 'willRemove' | 'removing'
+  stage: 'processing' | 'history' | 'justFinished' | 'historyOperations'
 }
 
 export interface AsyncMessageBuilder {

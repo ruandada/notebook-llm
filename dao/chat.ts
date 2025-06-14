@@ -1,14 +1,14 @@
 import { Injectable, Require } from '@/core/di'
-import { inserts, ModelStorage, sql } from './base'
 import { Initable } from '@/core/initable'
 import { Chat } from './chat.type'
 import { chatId } from '@/core/idgenerator'
 import { SQLiteRunResult } from 'expo-sqlite'
+import { insert, sql, SQLiteStorage } from '@/core/sqlite'
 
 @Injectable()
-@Require(ModelStorage)
+@Require(SQLiteStorage)
 export class ChatModel implements Initable {
-  constructor(private readonly storage: ModelStorage) {}
+  constructor(private readonly storage: SQLiteStorage) {}
 
   async init(): Promise<void> {
     await this.storage.execute(`
@@ -78,7 +78,7 @@ export class ChatModel implements Initable {
       useDefaultTitle: true,
       extra: {},
     }
-    await this.storage.run(inserts('chat', [ChatModel.serialize(chat)]))
+    await this.storage.run(insert('chat', [ChatModel.serialize(chat)]))
     return chat
   }
 

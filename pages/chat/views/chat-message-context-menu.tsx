@@ -1,7 +1,12 @@
 import { useThemeColor } from '@/components/theme-provider'
 import { MessageWithMetadata } from '@/core/chat'
+import { MessageController } from '@/core/chat/message-controller'
 import { ChatMessage } from '@/dao/chat-message.type'
-import { memo, useCallback } from 'react'
+import {
+  ExtendedContextMenuAction,
+  useContextMenuActions,
+} from '@/hooks/use-context-menu-actions'
+import { memo, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { NativeSyntheticEvent } from 'react-native'
 import ContextMenu, {
@@ -12,34 +17,26 @@ import ContextMenu, {
 export interface ChatMessageContextMenuProps
   extends Omit<ContextMenuProps, 'actions'> {
   message: MessageWithMetadata<ChatMessage>
+  controller: MessageController
   children?: React.ReactNode
 }
 
 export const ChatMessageContextMenu: React.FC<ChatMessageContextMenuProps> =
-  memo(({ message, children, ...restProps }): React.ReactNode => {
+  memo(({ message, controller, children, ...restProps }): React.ReactNode => {
     const secondaryBackgroundColor = useThemeColor('secondaryBackground')
     const { t } = useTranslation()
 
-    const handleTriggerAction = useCallback(
-      (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>) => {
-        console.log(e.nativeEvent.name)
-      },
-      [message]
-    )
-
-    return (
-      <ContextMenu
-        {...restProps}
-        onPress={handleTriggerAction}
-        actions={[
+    const { actions, onPress } = useContextMenuActions(
+      useMemo<ExtendedContextMenuAction[]>(
+        () => [
           ...(message.stage === 'history' && message.msg.role === 'assistant'
-            ? [
+            ? ([
                 {
                   title: t('chat.re_answer'),
                   subtitle: t('chat.re_answer_subtitle'),
                   systemIcon: 'arrow.clockwise',
                 },
-              ]
+              ] as ExtendedContextMenuAction[])
             : []),
 
           {
@@ -48,16 +45,28 @@ export const ChatMessageContextMenu: React.FC<ChatMessageContextMenuProps> =
             systemIcon: 'bubble.and.pencil',
           },
 
-          ...(message.stage === 'history'
-            ? [
+          ...(message.stage === 'history' && message.status === 'finished'
+            ? ([
                 {
                   title: t('delete'),
                   destructive: true,
                   systemIcon: 'delete.left.fill',
+                  onPress: () => {
+                    controller.removeHistoryMessage(message.msg.id)
+                  },
                 },
-              ]
+              ] as ExtendedContextMenuAction[])
             : []),
-        ]}
+        ],
+        [message, t, controller]
+      )
+    )
+
+    return (
+      <ContextMenu
+        {...restProps}
+        onPress={onPress}
+        actions={actions}
         previewBackgroundColor={secondaryBackgroundColor}
       >
         {children}
