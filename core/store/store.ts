@@ -2,6 +2,7 @@ import { StorageProvider } from './abstract'
 import { enableMapSet, produce, setAutoFreeze } from 'immer'
 import debounce from 'lodash/debounce'
 import { Initable } from '../initable'
+import { AsyncLock, createAsyncLock } from '../utils/schedule'
 
 export type Subscriber<T> = (newValue: T, oldValue: T) => void
 export type Updater<T> = (value: T) => void
@@ -11,17 +12,20 @@ setAutoFreeze(false)
 export class Store<T> implements Initable {
   protected value: T
   protected readonly subscribers: Set<Subscriber<T>>
+  protected readonly lock: AsyncLock
 
   constructor(
     protected readonly provider: StorageProvider<T>,
-    defaultData: () => T
+    defaultData: () => T,
+    flushInterval: number = 1000
   ) {
     this.value = defaultData()
     this.subscribers = new Set()
     this.flushAsync = debounce(
       this.flushAsync.bind(this),
-      1000
+      flushInterval
     ) as Store<T>['flushAsync']
+    this.lock = createAsyncLock(0)
   }
 
   async init(): Promise<void> {
@@ -41,7 +45,9 @@ export class Store<T> implements Initable {
   }
 
   async flushAsync(): Promise<void> {
-    await this.provider.save(this.value)
+    await this.lock.withLock(async (): Promise<void> => {
+      await this.provider.save(this.value)
+    })
   }
 
   subscribe(subscriber: Subscriber<T>): () => void {

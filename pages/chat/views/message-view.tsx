@@ -7,8 +7,8 @@ import {
   StreamTextMessage,
   TextMessage,
 } from '@/dao/chat-message.type'
-import React, { memo } from 'react'
-import { Pressable, ScrollView, Text, View, ViewProps } from 'react-native'
+import React, { memo, useCallback } from 'react'
+import { Text, View, ViewProps } from 'react-native'
 import { StreamTextMessageView } from './stream-text-message-view'
 import { TextMessageView } from './text-message-view'
 import { MessageWithMetadata } from '../../../core/chat'
@@ -19,6 +19,8 @@ import { AgentAvatar } from './agent-avatar'
 import { Agent } from '@/dao/agent'
 import { ChatMessageContextMenu } from './chat-message-context-menu'
 import { MessageController } from '@/core/chat/message-controller'
+import { MultiTapPressable } from '@/components/multi-tap-pressable'
+import { useRouter } from 'expo-router'
 
 export interface MessageViewProps extends ViewProps {
   message: MessageWithMetadata
@@ -29,6 +31,11 @@ export interface MessageViewProps extends ViewProps {
 export const MessageView: React.FC<MessageViewProps> = memo(
   ({ children, controller, agent, message, ...restProps }) => {
     const secondaryLabelColor = useThemeColor('secondaryLabel')
+    const router = useRouter()
+
+    const handleDoubleTap = useCallback(() => {
+      router.push(`/chat/message/${message.msg.id}/inspect`)
+    }, [message.msg.id, router])
 
     const contentView = (
       <>
@@ -76,13 +83,16 @@ export const MessageView: React.FC<MessageViewProps> = memo(
           disabled={message.stage !== 'history'}
           controller={controller}
         >
-          <Pressable className="px-4 py-3 flex flex-row items-start gap-4">
+          <MultiTapPressable
+            className="px-4 py-3 flex flex-row items-start gap-4"
+            onMultiTap={handleDoubleTap}
+          >
             <View className="mt-1">
               <AgentAvatar agent={agent} size={32} />
             </View>
 
             <View className="flex-1">{contentView}</View>
-          </Pressable>
+          </MultiTapPressable>
         </ChatMessageContextMenu>
       )
     }

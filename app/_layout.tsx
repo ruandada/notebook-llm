@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next'
 import { useAppInit } from '@/hooks/use-app-init'
 import { Alert, BackHandler } from 'react-native'
 import { ThemeProvider } from '@/components/theme-provider'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -52,8 +53,10 @@ export default function RootLayout() {
 
 const AppLayout: React.FC = memo(() => {
   return (
-    <ThemeProvider>
-      <Slot />
-    </ThemeProvider>
+    <GestureHandlerRootView>
+      <ThemeProvider>
+        <Slot />
+      </ThemeProvider>
+    </GestureHandlerRootView>
   )
 })

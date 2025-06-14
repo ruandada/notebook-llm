@@ -33,12 +33,11 @@ export const TextMessageView: React.FC<TextMessageViewProps> = memo(
               message={message}
               disabled={message.stage !== 'history'}
               controller={controller}
+              className="rounded-2xl px-4 py-3 bg-tint rounded-br-none"
             >
-              <Pressable className="rounded-2xl px-4 py-3 bg-tint rounded-br-none">
-                <Text className="leading-6 text-lg text-white">
-                  {message.msg.content.text}
-                </Text>
-              </Pressable>
+              <Text className="leading-6 text-lg text-white">
+                {message.msg.content.text}
+              </Text>
             </ChatMessageContextMenu>
           </View>
         ) : (
@@ -48,7 +47,6 @@ export const TextMessageView: React.FC<TextMessageViewProps> = memo(
             </Text>
           </View>
         )}
-
         {children}
       </View>
     )

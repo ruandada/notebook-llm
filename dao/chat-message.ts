@@ -69,6 +69,13 @@ export class ChatMessageModel implements Initable {
     return result.map((item) => ChatMessageModel.deserialize(item))
   }
 
+  async getByMessageId(messageId: string): Promise<ChatMessage | null> {
+    const result = await this.storage.queryFirst<ChatMessage>(
+      sql('SELECT * FROM chat_message WHERE id = ?', [messageId])
+    )
+    return result ? ChatMessageModel.deserialize(result) : null
+  }
+
   async deleteMessages(messageIds: string[]): Promise<void> {
     await this.storage.run(
       sql(

@@ -22,6 +22,17 @@ const HomeLayout: React.FC = memo(() => {
           ),
         }}
       />
+      <Stack.Screen
+        name="chat/message/[id]/inspect"
+        options={{
+          title: '',
+          presentation: 'modal',
+          headerShown: false,
+          headerBackground: () => (
+            <View className="w-full h-full bg-secondaryBackground" />
+          ),
+        }}
+      />
     </Stack>
   )
 })

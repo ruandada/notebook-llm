@@ -10,7 +10,8 @@
     "re_answer": "重新回答",
     "re_answer_subtitle": "重新生成这条消息",
     "inspect": "查看",
-    "inspect_subtitle": "查看或编辑这条消息"
+    "inspect_subtitle": "查看或编辑这条消息",
+    "message_not_found": "无法搜索到这此消息"
   },
   "settings": "设置",
   "request_failure": "请求失败",

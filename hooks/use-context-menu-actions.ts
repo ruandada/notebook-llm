@@ -10,27 +10,19 @@ export interface ExtendedContextMenuAction extends ContextMenuAction {
 }
 
 export const useContextMenuActions = (actions: ExtendedContextMenuAction[]) => {
-  const { nativeActions, actionMap } = useMemo(() => {
-    const nativeActions: ContextMenuAction[] = []
-    const actionMap: Record<number, ExtendedContextMenuAction> = {}
-
-    actions.forEach((action, index) => {
-      const { onPress, ...rest } = action
-      nativeActions.push(rest)
-      actionMap[index] = action
-    })
-
-    return { nativeActions, actionMap }
-  }, [actions])
+  const nativeActions = useMemo(
+    () => actions.map(({ onPress, ...rest }) => rest),
+    [actions]
+  )
 
   const onPress = useCallback(
     (e: NativeSyntheticEvent<ContextMenuOnPressNativeEvent>) => {
-      const action = actionMap[e.nativeEvent.index]
+      const action = actions[e.nativeEvent.index]
       if (action?.onPress) {
         action.onPress(e)
       }
     },
-    [actionMap]
+    [actions]
   )
 
   return {

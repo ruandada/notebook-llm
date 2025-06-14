@@ -10,7 +10,8 @@
     "re_answer": "Re-answer",
     "re_answer_subtitle": "Regenerate this message",
     "inspect": "Inspect",
-    "inspect_subtitle": "View or modify this message"
+    "inspect_subtitle": "View or modify this message",
+    "message_not_found": "Message can not be found"
   },
   "settings": "Settings",
   "request_failure": "Request failure",

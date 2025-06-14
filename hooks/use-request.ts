@@ -43,6 +43,7 @@ export function useRequest<Req extends any[], Res>(
         const res = await opt.runner(...request)
         setData(res)
         opt.onSuccess?.(res, ...request)
+        setLoading(false)
         return res
       } catch (err) {
         setError(err as Error)
@@ -50,9 +51,8 @@ export function useRequest<Req extends any[], Res>(
         if (opt.toastError !== false) {
           Alert.alert(t('request_failure'), (err as Error).message)
         }
-        throw err
-      } finally {
         setLoading(false)
+        throw err
       }
     },
     deps ?? [
